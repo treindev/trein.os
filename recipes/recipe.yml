@@ -36,11 +36,17 @@ modules:
       packages:
         - niri
         - dms
+        - dms-greeter
         - code
         - btop
         - fish
         - ghostty
         - ddcutil
+
+  - type: systemd
+    system:
+      enabled:
+        - greetd.service
 
   - type: default-flatpaks
     configurations:
