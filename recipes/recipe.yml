@@ -43,8 +43,17 @@ modules:
         - ghostty
         - ddcutil
 
+  - type: script
+    snippets:
+      - dms setup
+      - systemctl --user add-wants niri.service dms
+
   - type: systemd
     system:
+      disabled:
+        - gdm
+        - lightdm
+        - sddm
       enabled:
         - greetd.service
 
