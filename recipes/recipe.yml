@@ -42,11 +42,12 @@ modules:
         - fish
         - ghostty
         - ddcutil
-
-  - type: script
-    snippets:
-      - dms setup
-      - systemctl --user add-wants niri.service dms
+        - mako
+        - xdg-desktop-portal-gtk
+        - xdg-desktop-portal-gnome
+        - gnome-keyring
+        - nautilus
+        - plasma-polkit-agent
 
   - type: systemd
     system:
@@ -56,6 +57,10 @@ modules:
         - sddm
       enabled:
         - greetd.service
+        - plasma-polkit-agent.service
+    user:
+      enabled:
+        - mako.service
 
   - type: default-flatpaks
     configurations:
