@@ -47,7 +47,7 @@ modules:
         - xdg-desktop-portal-gnome
         - gnome-keyring
         - nautilus
-        - plasma-polkit-agent
+        - plasma-kde-agent
 
   - type: systemd
     system:
