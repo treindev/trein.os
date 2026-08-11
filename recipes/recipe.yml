@@ -51,10 +51,6 @@ modules:
 
   - type: systemd
     system:
-      disabled:
-        - gdm
-        - lightdm
-        - sddm
       enabled:
         - greetd.service
     user:
