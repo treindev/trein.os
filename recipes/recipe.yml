@@ -57,10 +57,10 @@ modules:
         - sddm
       enabled:
         - greetd.service
-        - plasma-polkit-agent.service
     user:
       enabled:
         - mako.service
+        - plasma-polkit-agent.service
 
   - type: default-flatpaks
     configurations:
