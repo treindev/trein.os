@@ -4,7 +4,7 @@
 name: trein.os
 description: Atomic niri desktop environment with dms. Based on Fedora 44
 
-base-image: ghcr.io/ublue-os/base-main
+base-image: ghcr.io/ublue-os/akmods
 image-version: 44
 
 modules:
