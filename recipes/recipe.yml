@@ -52,6 +52,9 @@ modules:
         - qemu-kvm
         - virt-install
         - virt-manager
+      exclude:
+        - waybar
+        - alacritty
     remove:
       packages:
         - firefox
