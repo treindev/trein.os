@@ -52,6 +52,8 @@ modules:
         - qemu-kvm
         - virt-install
         - virt-manager
+        - power-profiles-daemon
+        - flameshot
       exclude:
         - waybar
         - alacritty
@@ -69,7 +71,8 @@ modules:
         - mako.service
         - plasma-polkit-agent.service
         - init-devbox.service
-  
+        - power-profiles-daemon.service
+
   - type: script
     snippets:
       - mkdir -p /etc/systemd/user/niri.service.wants
@@ -87,5 +90,8 @@ modules:
           - com.discordapp.Discord
           - org.fedoraproject.MediaWriter
           - com.actualbudget.actual
+          - com.calibre_ebook.calibre
+          - io.github.kolunmi.Bazaar
+          - com.github.tchx84.Flatseal
 
   - type: signing
