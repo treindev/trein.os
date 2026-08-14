@@ -37,7 +37,7 @@ modules:
         - niri
         - dms
         - dms-greeter
-        - code
+        - distrobox
         - btop
         - fish
         - ghostty
@@ -68,6 +68,7 @@ modules:
       enabled:
         - mako.service
         - plasma-polkit-agent.service
+        - init-devbox.service
   
   - type: script
     snippets:
