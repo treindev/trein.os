@@ -43,12 +43,10 @@ modules:
         - ghostty
         - ddcutil
         - mako
-        - xdg-desktop-portal-gtk
         - xdg-desktop-portal-gnome
         - gnome-keyring
         - nautilus
         - polkit-kde
-        - ddcutil
         - libvirt-daemon-config-network
         - libvirt-daemon-kvm
         - qemu-kvm
@@ -56,7 +54,6 @@ modules:
         - virt-manager
     remove:
       packages:
-        - alacritty
         - firefox
       auto-remove: true
 
@@ -83,11 +80,9 @@ modules:
           - org.mozilla.firefox
           - com.valvesoftware.Steam
           - com.usebottles.bottles
-          - org.freedesktop.Platform.VulkanLayer.gamescope
           - org.prismlauncher.PrismLauncher
           - com.discordapp.Discord
           - org.fedoraproject.MediaWriter
           - com.actualbudget.actual
-          - org.fedoraproject.MediaWriter
 
   - type: signing
