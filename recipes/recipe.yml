@@ -48,6 +48,17 @@ modules:
         - gnome-keyring
         - nautilus
         - polkit-kde
+        - ddcutil
+        - libvirt-daemon-config-network
+        - libvirt-daemon-kvm
+        - qemu-kvm
+        - virt-install
+        - virt-manager
+    remove:
+      packages:
+        - alacritty
+        - firefox
+      auto-remove: true
 
   - type: systemd
     system:
@@ -69,8 +80,6 @@ modules:
         scope: system
         install:
           - org.mozilla.firefox
-      - scope: user
-        install:
           - com.valvesoftware.Steam
           - com.usebottles.bottles
           - org.freedesktop.Platform.VulkanLayer.gamescope
@@ -78,5 +87,6 @@ modules:
           - com.discordapp.Discord
           - org.fedoraproject.MediaWriter
           - com.actualbudget.actual
+          - org.fedoraproject.MediaWriter
 
   - type: signing
