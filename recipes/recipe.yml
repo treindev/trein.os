@@ -4,16 +4,10 @@
 name: trein.os
 description: Atomic niri desktop environment with dms. Based on Fedora 44
 
-base-image: ghcr.io/ublue-os/base-main
+base-image: ghcr.io/ublue-os/akmods-nvidia
 image-version: 44
 
 modules:
-  - type: akmods
-    base: main
-    nvidia-driver: nvidia
-    install:
-      - nvidia-580xx
-
   - type: files
     files:
       - source: system
