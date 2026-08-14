@@ -1,0 +1,24 @@
+// Open the Firefox picture-in-picture player as floating by default.
+window-rule {
+    // This app-id regular expression will work for both:
+    // - host Firefox (app-id is "firefox")
+    // - Flatpak Firefox (app-id is "org.mozilla.firefox")
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+// Block steam games from minimizing themselves
+window-rule {
+    match app-id=r#"^steam_app_289070$"#
+    // Forces the window to start focused and open wide
+    open-fullscreen true
+}
+
+prefer-no-csd
+
+// Prevent Niri from suspending frame callbacks on hidden/unfocused windows
+window-rule {
+    match app-id=r#"^gamescope"#
+    block-out-from "screencast" // Optional
+    // Keeps gamescope rendering continuously even on other workspaces
+    open-on-workspace "game"   // Optional: pin to a dedicated workspace
+}

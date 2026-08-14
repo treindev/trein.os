@@ -57,6 +57,11 @@ modules:
       enabled:
         - mako.service
         - plasma-polkit-agent.service
+  
+  - type: script
+    snippets:
+      - mkdir -p /etc/systemd/user/niri.service.wants
+      - ln -s /usr/lib/systemd/user/dms.service /etc/systemd/user/niri.service.wants/dms.service
 
   - type: default-flatpaks
     configurations:
