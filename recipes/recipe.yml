@@ -71,7 +71,6 @@ modules:
         - mako.service
         - plasma-polkit-agent.service
         - init-devbox.service
-        - power-profiles-daemon.service
 
   - type: script
     snippets:
