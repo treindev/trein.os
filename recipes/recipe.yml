@@ -14,12 +14,20 @@ modules:
         destination: / # copies files/system/* the image's root folder /
 
   - type: dnf
+    repos:
+      nonfree: rpmfusion
     install:
       packages:
         - akmod-nvidia-580xx
         - xorg-x11-drv-nvidia-580xx
         - xorg-x11-drv-nvidia-580xx-cuda
         - xorg-x11-drv-nvidia-580xx-power
+
+  - type: kargs
+    kargs:
+      - rd.driver.blacklist=nouveau
+      - modprope.blacklist=nouveau
+      - nvidia-drm.modeset=1
 
   - type: systemd
     system:
