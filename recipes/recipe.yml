@@ -58,6 +58,7 @@ modules:
         - virt-manager
         - power-profiles-daemon
         - flameshot
+        - bolt
       exclude:
         - waybar
         - alacritty
@@ -70,6 +71,7 @@ modules:
     system:
       enabled:
         - greetd.service
+        - boltd.service
     user:
       enabled:
         - mako.service
