@@ -71,7 +71,6 @@ modules:
     system:
       enabled:
         - greetd.service
-        - boltd.service
     user:
       enabled:
         - mako.service
