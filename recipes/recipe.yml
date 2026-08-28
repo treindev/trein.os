@@ -1,6 +1,5 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/treindev/trein.os
 name: trein.os
 description: Atomic niri desktop environment with dms. Based on Fedora 44
 
@@ -8,15 +7,13 @@ base-image: ghcr.io/ublue-os/base-main
 image-version: 44
 
 modules:
+  # Static Configuration & Root Files (Infrequent changes)
   - type: files
     files:
       - source: system
-        destination: / # copies files/system/* the image's root folder /
+        destination: /
 
-  - type: akmods
-    nvidia-driver: nvidia
-    install: []
-
+  # Static Fonts (Infrequent changes)
   - type: fonts
     fonts:
       nerd-fonts:
@@ -31,20 +28,18 @@ modules:
         - Open Sans
         - Inter
 
+  # Kernel Drivers
+  - type: akmods
+    nvidia-driver: nvidia
+    install: []
+
+  # Core System Packages & Virtualization (Stable, rarely changes)
   - type: dnf
-    repos:
-      copr:
-        - avengemedia/dms
-        - scottames/ghostty
     install:
       packages:
-        - niri
-        - dms
-        - dms-greeter
         - distrobox
         - btop
         - fish
-        - ghostty
         - ddcutil
         - mako
         - xdg-desktop-portal-gnome
@@ -59,14 +54,28 @@ modules:
         - power-profiles-daemon
         - flameshot
         - bolt
-      exclude:
-        - waybar
-        - alacritty
     remove:
       packages:
         - firefox
       auto-remove: true
 
+  # Fast-Moving / COPR Packages (Frequent updates)
+  - type: dnf
+    repos:
+      copr:
+        - avengemedia/dms
+        - scottames/ghostty
+    install:
+      packages:
+        - niri
+        - dms
+        - dms-greeter
+        - ghostty
+      exclude:
+        - waybar
+        - alacritty
+
+  # Service Integration & Symlinks
   - type: systemd
     system:
       enabled:
@@ -82,6 +91,7 @@ modules:
       - mkdir -p /etc/systemd/user/niri.service.wants
       - ln -s /usr/lib/systemd/user/dms.service /etc/systemd/user/niri.service.wants/dms.service
 
+  # Flatpaks & Final Signing
   - type: default-flatpaks
     configurations:
       - notify: true
