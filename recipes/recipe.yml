@@ -10,7 +10,9 @@ modules:
   # Static Configuration & Root Files (Infrequent changes)
   - type: files
     files:
-      - source: system
+      - source: base
+        destination: /
+      - source: niri
         destination: /
 
   # Static Fonts (Infrequent changes)
