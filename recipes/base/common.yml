@@ -1,0 +1,83 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  - type: signing
+  - type: files
+    files: 
+      - source: base
+        destination: /
+
+  # Static Fonts (Infrequent changes)
+  - type: fonts
+    fonts:
+      nerd-fonts:
+        - FiraCode
+        - Hack
+        - SourceCodePro
+        - Terminus
+        - JetBrainsMono
+        - NerdFontsSymbolsOnly
+      google-fonts:
+        - Roboto
+        - Open Sans
+        - Inter
+
+  # Core System Packages & Virtualization (Stable, rarely changes)
+  - type: dnf
+    install:
+      packages:
+        - distrobox
+        - btop
+        - fish
+        - ddcutil
+        - mako
+        - xdg-desktop-portal-gnome
+        - gnome-keyring
+        - nautilus
+        - polkit-kde
+        - libvirt-daemon-config-network
+        - libvirt-daemon-kvm
+        - qemu-kvm
+        - virt-install
+        - virt-manager
+        - power-profiles-daemon
+        - flameshot
+        - bolt
+    remove:
+      packages:
+        - firefox
+      auto-remove: true
+
+  # Fast-Moving / COPR Packages (Frequent updates)
+  - type: dnf
+    repos:
+      copr:
+        - scottames/ghostty
+    install:
+      packages:
+        - ghostty
+
+  # Service Integration & Symlinks
+  - type: systemd
+    user:
+      enabled:
+        - mako.service
+        - plasma-polkit-agent.service
+        - init-devbox.service
+
+  # Flatpaks
+  - type: default-flatpaks
+    configurations:
+      - notify: true
+        scope: system
+        install:
+          - org.mozilla.firefox
+          - com.valvesoftware.Steam
+          - com.usebottles.bottles
+          - org.prismlauncher.PrismLauncher
+          - com.discordapp.Discord
+          - org.fedoraproject.MediaWriter
+          - com.actualbudget.actual
+          - com.calibre_ebook.calibre
+          - io.github.kolunmi.Bazaar
+          - com.github.tchx84.Flatseal

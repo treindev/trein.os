@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  - type: files
+    files:
+      - source: niri
+      - destination: /
+
+  # Fast-Moving / COPR Packages (Frequent updates)
+  - type: dnf
+    repos:
+      copr:
+        - avengemedia/dms
+    install:
+      packages:
+        - niri
+        - dms
+        - dms-greeter
+      exclude:
+        - waybar
+        - alacritty
+
+  # Service Integration & Symlinks
+  - type: systemd
+    system:
+      enabled:
+        - greetd.service
+
+  - type: script
+    snippets:
+      - mkdir -p /etc/systemd/user/niri.service.wants
+      - ln -s /usr/lib/systemd/user/dms.service /etc/systemd/user/niri.service.wants/dms.service
