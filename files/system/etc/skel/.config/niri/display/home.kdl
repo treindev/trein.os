@@ -1,0 +1,12 @@
+// Home Setup
+output "Dell Inc. DELL P2425D HT67D94" {
+    mode "2560x1440@59.951"
+    transform "90"
+    position x=-4000 y=-700
+}
+output "Dell Inc. DELL U3225QE 65ZQKF4" {
+    mode "2560x1440@119.998"
+    position x=-2560 y=-350
+    scale 1
+    focus-at-startup
+}
