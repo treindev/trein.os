@@ -59,6 +59,13 @@ modules:
 
   # Service Integration & Symlinks
   - type: systemd
+    system:
+      enabled:
+        - fedora-atomic-desktop-appstream-cache-refresh.timer
+      disabled:
+        - NetworkManager-wait-online.service
+        - rpc-statd-notify.service
+        - fedora-atomic-desktop-appstream-cache-refresh.service
     user:
       enabled:
         - mako.service
