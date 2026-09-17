@@ -26,7 +26,10 @@ Per [ADR-0002](docs/adr/0002-flavor-tagged-container-images.md), builds are orga
 | Flavor | Tag | Target Hardware |
 | :--- | :--- | :--- |
 | **Niri + NVIDIA** (Default) | `niri-nvidia` | Personal laptop with dedicated NVIDIA GPU |
-| **Niri Generic** (Planned) | `niri` | Desktop / work laptop with AMD or Intel graphics |
+| **Niri Generic** (Planned: [#7](https://github.com/treindev/trein.os/issues/7)) | `niri` | Desktop / work laptop with AMD or Intel graphics |
+
+> [!NOTE]
+> Implementation of the flavor tag naming and multi-flavor CI build matrix is tracked in Issue [#7](https://github.com/treindev/trein.os/issues/7).
 
 ### Rebasing an Existing Atomic Fedora System
 
