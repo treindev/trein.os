@@ -64,6 +64,7 @@ modules:
         - mako.service
         - plasma-polkit-agent.service
         - init-devbox.service
+        - devbox-update.timer
 
   # Flatpaks
   - type: default-flatpaks
