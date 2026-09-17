@@ -1,9 +1,31 @@
 import configparser
 import os
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def create_mock_distrobox(tmpdir, container_exists=True):
+    mock_bin = Path(tmpdir) / "distrobox"
+    log_file = Path(tmpdir) / "distrobox.log"
+    container_output = (
+        'echo "devbox | running | registry.fedoraproject.org/fedora-toolbox:latest"'
+        if container_exists
+        else "true"
+    )
+    mock_bin.write_text(f"""#!/usr/bin/env bash
+echo "$@" >> "{log_file}"
+if [ "$1" = "list" ]; then
+    {container_output}
+fi
+exit 0
+""")
+    mock_bin.chmod(0o755)
+    return mock_bin, log_file
+
 
 class TestDevboxManifest(unittest.TestCase):
     def setUp(self):
@@ -15,8 +37,7 @@ class TestDevboxManifest(unittest.TestCase):
     def test_manifest_configuration(self):
         if not self.manifest_path.is_file():
             self.skipTest("Manifest file does not exist yet")
-        
-        # Read raw content to verify multi-line or raw hook values
+
         content = self.manifest_path.read_text()
         config = configparser.ConfigParser(strict=False, interpolation=None)
         config.read_string(content)
@@ -39,11 +60,12 @@ class TestDevboxManifest(unittest.TestCase):
         for pkg in ["git", "fish", "curl", "code"]:
             self.assertIn(pkg, packages, f"Package {pkg} missing in additional_packages")
 
-        # pre_init_hooks (VS Code repo & GPG key)
+        # pre_init_hooks (VS Code repo & GPG key, with idempotency check)
         self.assertIn("pre_init_hooks", devbox)
         pre_hooks = devbox.get("pre_init_hooks")
         self.assertIn("packages.microsoft.com", pre_hooks, "Microsoft repo/key must be in pre_init_hooks")
         self.assertIn("vscode", pre_hooks, "VS Code repository config must be in pre_init_hooks")
+        self.assertIn("test -f", pre_hooks, "pre_init_hooks must contain an idempotency check for offline safety")
 
         # init_hooks (Zed & Antigravity)
         self.assertIn("init_hooks", devbox)
@@ -70,7 +92,6 @@ class TestDevboxWrapper(unittest.TestCase):
     def test_wrapper_syntax(self):
         if not self.wrapper_path.is_file():
             self.skipTest("Wrapper script does not exist yet")
-        import subprocess
         res = subprocess.run(["bash", "-n", str(self.wrapper_path)], capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"Bash syntax error in wrapper: {res.stderr}")
 
@@ -80,26 +101,11 @@ class TestDevboxWrapper(unittest.TestCase):
         self.assertIn("distrobox enter", content)
 
     def test_wrapper_behavior_runs_enter(self):
-        import tempfile
-        import subprocess
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create a mock distrobox command that logs its calls
-            mock_bin = Path(tmpdir) / "distrobox"
-            log_file = Path(tmpdir) / "distrobox.log"
-            mock_bin.write_text(f"""#!/usr/bin/env bash
-echo "$@" >> "{log_file}"
-if [ "$1" = "list" ]; then
-    echo "devbox | running | registry.fedoraproject.org/fedora-toolbox:latest"
-fi
-exit 0
-""")
-            mock_bin.chmod(0o755)
-
+            _, log_file = create_mock_distrobox(tmpdir, container_exists=True)
             env = os.environ.copy()
             env["PATH"] = f"{tmpdir}:{env['PATH']}"
 
-            # Run devbox with no args
             res = subprocess.run([str(self.wrapper_path)], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
             calls = log_file.read_text().strip().splitlines()
@@ -107,46 +113,21 @@ exit 0
             self.assertEqual(calls[1], "enter devbox")
 
     def test_wrapper_behavior_forwards_arguments(self):
-        import tempfile
-        import subprocess
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            mock_bin = Path(tmpdir) / "distrobox"
-            log_file = Path(tmpdir) / "distrobox.log"
-            mock_bin.write_text(f"""#!/usr/bin/env bash
-echo "$@" >> "{log_file}"
-if [ "$1" = "list" ]; then
-    echo "devbox | running | registry.fedoraproject.org/fedora-toolbox:latest"
-fi
-exit 0
-""")
-            mock_bin.chmod(0o755)
-
+            _, log_file = create_mock_distrobox(tmpdir, container_exists=True)
             env = os.environ.copy()
             env["PATH"] = f"{tmpdir}:{env['PATH']}"
 
-            # Run devbox with args: devbox code /home/project
             res = subprocess.run([str(self.wrapper_path), "code", "/home/project"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
             calls = log_file.read_text().strip().splitlines()
             self.assertEqual(calls[1], "enter devbox -- code /home/project")
 
     def test_wrapper_behavior_when_container_missing(self):
-        import tempfile
-        import subprocess
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            mock_bin = Path(tmpdir) / "distrobox"
-            log_file = Path(tmpdir) / "distrobox.log"
-            mock_bin.write_text(f"""#!/usr/bin/env bash
-echo "$@" >> "{log_file}"
-exit 0
-""")
-            mock_bin.chmod(0o755)
-
+            _, log_file = create_mock_distrobox(tmpdir, container_exists=False)
             env = os.environ.copy()
             env["PATH"] = f"{tmpdir}:{env['PATH']}"
-            # Point manifest to our repo's distrobox.ini
             env["DEVBOX_MANIFEST"] = str(REPO_ROOT / "files" / "base" / "etc" / "distrobox" / "distrobox.ini")
 
             res = subprocess.run([str(self.wrapper_path)], env=env, capture_output=True, text=True)
@@ -155,6 +136,21 @@ exit 0
             self.assertIn("list", calls[0])
             self.assertIn("assemble create", calls[1])
             self.assertEqual(calls[2], "enter devbox")
+
+    def test_wrapper_assemble_subcommand(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _, log_file = create_mock_distrobox(tmpdir, container_exists=False)
+            env = os.environ.copy()
+            env["PATH"] = f"{tmpdir}:{env['PATH']}"
+            env["DEVBOX_MANIFEST"] = str(REPO_ROOT / "files" / "base" / "etc" / "distrobox" / "distrobox.ini")
+
+            res = subprocess.run([str(self.wrapper_path), "assemble"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            calls = log_file.read_text().strip().splitlines()
+            self.assertIn("list", calls[0])
+            self.assertIn("assemble create", calls[1])
+            # Should not enter after explicit assemble command
+            self.assertEqual(len(calls), 2)
 
 
 class TestDevboxUpdate(unittest.TestCase):
@@ -170,7 +166,6 @@ class TestDevboxUpdate(unittest.TestCase):
     def test_update_script_syntax(self):
         if not self.update_script_path.is_file():
             self.skipTest("Update script does not exist yet")
-        import subprocess
         res = subprocess.run(["bash", "-n", str(self.update_script_path)], capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"Bash syntax error in update script: {res.stderr}")
 
@@ -180,6 +175,7 @@ class TestDevboxUpdate(unittest.TestCase):
         self.assertIn("[Timer]", content)
         self.assertIn("OnStartupSec=5m", content)
         self.assertIn("WantedBy=timers.target", content)
+        self.assertNotIn("Persistent=", content, "Monotonic timer should not set Persistent=true")
 
     def test_service_configuration(self):
         self.assertTrue(self.service_path.is_file(), f"Service file missing at {self.service_path}")
@@ -187,26 +183,14 @@ class TestDevboxUpdate(unittest.TestCase):
         self.assertIn("[Service]", content)
         self.assertIn("Type=oneshot", content)
         self.assertIn("ExecStart=/usr/libexec/devbox-update", content)
-        self.assertIn("network-online.target", content)
+        self.assertIn("After=init-devbox.service", content)
+        self.assertNotIn("WantedBy=", content, "Timer-activated service should not have [Install] WantedBy")
 
     def test_update_behavior_upgrades_and_notifies(self):
-        import tempfile
-        import subprocess
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            mock_distrobox = Path(tmpdir) / "distrobox"
+            _, log_distrobox = create_mock_distrobox(tmpdir, container_exists=True)
             mock_notify = Path(tmpdir) / "notify-send"
-            log_distrobox = Path(tmpdir) / "distrobox.log"
             log_notify = Path(tmpdir) / "notify.log"
-
-            mock_distrobox.write_text(f"""#!/usr/bin/env bash
-echo "$@" >> "{log_distrobox}"
-if [ "$1" = "list" ]; then
-    echo "devbox | running | registry.fedoraproject.org/fedora-toolbox:latest"
-fi
-exit 0
-""")
-            mock_distrobox.chmod(0o755)
 
             mock_notify.write_text(f"""#!/usr/bin/env bash
 echo "$@" >> "{log_notify}"
@@ -219,7 +203,7 @@ exit 0
 
             res = subprocess.run([str(self.update_script_path)], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            
+
             dbox_calls = log_distrobox.read_text().strip().splitlines()
             self.assertIn("list", dbox_calls[0])
             self.assertEqual(dbox_calls[1], "upgrade devbox")
@@ -228,25 +212,14 @@ exit 0
             self.assertTrue(any("-u low" in c for c in notify_calls), "Notification must be low urgency")
 
     def test_update_behavior_skips_when_missing(self):
-        import tempfile
-        import subprocess
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            mock_distrobox = Path(tmpdir) / "distrobox"
-            log_distrobox = Path(tmpdir) / "distrobox.log"
-
-            mock_distrobox.write_text(f"""#!/usr/bin/env bash
-echo "$@" >> "{log_distrobox}"
-exit 0
-""")
-            mock_distrobox.chmod(0o755)
-
+            _, log_distrobox = create_mock_distrobox(tmpdir, container_exists=False)
             env = os.environ.copy()
             env["PATH"] = f"{tmpdir}:{env['PATH']}"
 
             res = subprocess.run([str(self.update_script_path)], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            
+
             dbox_calls = log_distrobox.read_text().strip().splitlines()
             self.assertEqual(len(dbox_calls), 1)
             self.assertIn("list", dbox_calls[0])
@@ -259,8 +232,8 @@ class TestSystemIntegration(unittest.TestCase):
 
     def test_init_devbox_service_uses_assemble(self):
         content = self.init_service_path.read_text()
-        self.assertIn("distrobox assemble create", content, "init-devbox.service must use distrobox assemble create")
-        self.assertIn("/etc/distrobox/distrobox.ini", content, "init-devbox.service must point to /etc/distrobox/distrobox.ini")
+        self.assertIn("devbox assemble", content, "init-devbox.service must call devbox assemble")
+        self.assertIn("Description=Initialize Devbox", content, "init-devbox.service must use domain term Devbox")
 
     def test_recipe_enables_devbox_timer(self):
         content = self.recipe_path.read_text()

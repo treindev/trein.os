@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # /usr/bin/devbox
-# Host wrapper script to enter the devbox container directly.
+# Host wrapper script to enter or assemble the Devbox container.
 # Reference: ADR-0001 (Distrobox-first development environment)
 
 set -euo pipefail
@@ -8,19 +8,28 @@ set -euo pipefail
 DEVBOX_NAME="${DEVBOX_NAME:-devbox}"
 DEVBOX_MANIFEST="${DEVBOX_MANIFEST:-/etc/distrobox/distrobox.ini}"
 
-# Ensure container exists before attempting to enter
-if ! distrobox list 2>/dev/null | grep -qw "${DEVBOX_NAME}"; then
-    if [ -f "${DEVBOX_MANIFEST}" ]; then
-        echo "Devbox container '${DEVBOX_NAME}' not found. Assembling from ${DEVBOX_MANIFEST}..." >&2
-        distrobox assemble create --file "${DEVBOX_MANIFEST}"
-    else
-        echo "Error: Devbox container '${DEVBOX_NAME}' not found and ${DEVBOX_MANIFEST} does not exist." >&2
-        exit 1
+assemble_if_needed() {
+    if ! distrobox list 2>/dev/null | grep -qw "${DEVBOX_NAME}"; then
+        if [ -f "${DEVBOX_MANIFEST}" ]; then
+            echo "Devbox container '${DEVBOX_NAME}' not found. Assembling from ${DEVBOX_MANIFEST}..." >&2
+            distrobox assemble create --file "${DEVBOX_MANIFEST}"
+        else
+            echo "Error: Devbox container '${DEVBOX_NAME}' not found and ${DEVBOX_MANIFEST} does not exist." >&2
+            exit 1
+        fi
     fi
-fi
+}
 
-if [ $# -eq 0 ]; then
-    exec distrobox enter "${DEVBOX_NAME}"
-else
-    exec distrobox enter "${DEVBOX_NAME}" -- "$@"
-fi
+case "${1:-}" in
+    --assemble|assemble)
+        assemble_if_needed
+        ;;
+    *)
+        assemble_if_needed
+        if [ $# -eq 0 ]; then
+            exec distrobox enter "${DEVBOX_NAME}"
+        else
+            exec distrobox enter "${DEVBOX_NAME}" -- "$@"
+        fi
+        ;;
+esac
