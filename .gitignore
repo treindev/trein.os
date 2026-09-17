@@ -4,3 +4,5 @@ cosign.private
 *.iso
 *.iso-CHECKSUM
 /.bluebuild-scripts_*
+__pycache__/
+*.pyc

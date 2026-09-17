@@ -1,0 +1,12 @@
+[Unit]
+Description=Background update Devbox container
+Documentation=https://github.com/treindev/trein.os
+After=network-online.target init-devbox.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/devbox-update
+
+[Install]
+WantedBy=default.target

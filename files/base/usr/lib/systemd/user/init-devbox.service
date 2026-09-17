@@ -1,12 +1,12 @@
 [Unit]
 Description=Initialize Development Distrobox Container
+Documentation=https://github.com/treindev/trein.os
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/distrobox-create --name devbox --image registry.fedoraproject.org/fedora-toolbox:latest --yes --additional-packages "git fish curl"
-ExecStartPost=/usr/bin/distrobox-enter -n devbox -- /usr/bin/bash -c "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && sudo sh -c 'echo -e \"[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc\" > /etc/yum.repos.d/vscode.repo' && sudo dnf install -y code && distrobox-export --app code"
+ExecStart=/usr/bin/bash -c 'if ! /usr/bin/distrobox list 2>/dev/null | grep -qw devbox; then /usr/bin/distrobox assemble create --file /etc/distrobox/distrobox.ini; fi'
 RemainAfterExit=yes
 
 [Install]
