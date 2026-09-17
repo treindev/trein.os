@@ -26,10 +26,7 @@ Per [ADR-0002](docs/adr/0002-flavor-tagged-container-images.md), builds are orga
 | Flavor | Tag | Target Hardware |
 | :--- | :--- | :--- |
 | **Niri + NVIDIA** (Default) | `niri-nvidia` | Personal laptop with dedicated NVIDIA GPU |
-| **Niri Generic** (Planned: [#7](https://github.com/treindev/trein.os/issues/7)) | `niri` | Desktop / work laptop with AMD or Intel graphics |
-
-> [!NOTE]
-> Implementation of the flavor tag naming and multi-flavor CI build matrix is tracked in Issue [#7](https://github.com/treindev/trein.os/issues/7).
+| **Niri Generic** | `niri` | Desktop / work laptop with AMD or Intel graphics |
 
 ### Rebasing an Existing Atomic Fedora System
 
@@ -93,7 +90,8 @@ trein.os/
 ├── CONTEXT.md               # Domain vocabulary and ubiquitous terms
 ├── AGENTS.md                # Agent workflow rules and guidelines
 ├── recipes/                 # BlueBuild image definitions
-│   ├── fedora-niri-nvidia-latest.yml
+│   ├── niri-nvidia.yml      # Niri + NVIDIA flavor
+│   ├── niri.yml             # Niri generic (non-Nvidia) flavor
 │   └── base/                # Reusable module snippets
 │       ├── common.yml       # Base packages, fonts, flatpaks, user services
 │       ├── niri.yml         # Niri compositor and DMS shell
