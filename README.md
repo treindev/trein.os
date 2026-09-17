@@ -1,43 +1,114 @@
 # trein.os &nbsp; [![bluebuild build badge](https://github.com/treindev/trein.os/actions/workflows/build.yml/badge.svg)](https://github.com/treindev/trein.os/actions/workflows/build.yml)
 
-See the [BlueBuild docs](https://blue-build.org/how-to/setup/) for quick setup instructions for setting up your own repository based on this template.
+An opinionated, immutable Fedora Atomic workstation built with [BlueBuild](https://blue-build.org/), featuring the [Niri](https://github.com/YaLTeR/niri) scrollable-tiling Wayland compositor, [Dank Material Shell (DMS)](https://github.com/avengemedia/dms), and containerized development via [Distrobox](https://github.com/89luca89/distrobox).
 
-After setup, it is recommended you update this README to describe your custom image.
+---
 
-## Installation
+## System Overview
 
-> [!WARNING]  
-> [This is an experimental feature](https://www.fedoraproject.org/wiki/Changes/OstreeNativeContainerStable), try at your own discretion.
+- **Host Image**: Fedora Atomic 44 ([Universal Blue `base-main`](https://github.com/ublue-os/base-main))
+- **Compositor**: [Niri](https://github.com/YaLTeR/niri) (infinite scrollable-tiling Wayland compositor)
+- **Desktop Shell & Greeter**: Dank Material Shell (`dms`) with `dms-greeter` running on `greetd`
+- **Shell & Terminal**: Fish shell and [Ghostty](https://ghostty.org/)
+- **Graphics / Drivers**: NVIDIA proprietary drivers built via `akmods`
+- **Development**: Isolated Distrobox (`devbox`) with exported IDEs (VS Code, Zed, Antigravity)
+- **Virtualization**: Host-layered KVM/QEMU hypervisor with `virt-manager`
+- **Application Layer**: System-level Flatpaks (Firefox, Steam, Bottles, Prism Launcher, Discord, Actual Budget, Calibre, MediaWriter, Bazaar, Flatseal)
 
-To rebase an existing atomic Fedora installation to the latest build:
+---
 
-- First rebase to the unsigned image, to get the proper signing keys and policies installed:
-  ```
-  rpm-ostree rebase ostree-unverified-registry:ghcr.io/treindev/trein.os:latest
-  ```
-- Reboot to complete the rebase:
-  ```
-  systemctl reboot
-  ```
-- Then rebase to the signed image, like so:
-  ```
-  rpm-ostree rebase ostree-image-signed:docker://ghcr.io/treindev/trein.os:latest
-  ```
-- Reboot again to complete the installation
-  ```
-  systemctl reboot
-  ```
+## Flavors & Installation
 
-The `latest` tag will automatically point to the latest build. That build will still always use the Fedora version specified in `recipe.yml`, so you won't get accidentally updated to the next major version.
+Images are signed with [Sigstore](https://www.sigstore.dev/)'s [cosign](https://github.com/sigstore/cosign) and published to the GitHub Container Registry under `ghcr.io/treindev/trein.os`.
 
-## ISO
+Per [ADR-0002](docs/adr/0002-flavor-tagged-container-images.md), builds are organized into flavor tags:
 
-If build on Fedora Atomic, you can generate an offline ISO with the instructions available [here](https://blue-build.org/how-to/generate-iso/#_top). These ISOs cannot unfortunately be distributed on GitHub for free due to large sizes, so for public projects something else has to be used for hosting.
+| Flavor | Tag | Target Hardware |
+| :--- | :--- | :--- |
+| **Niri + NVIDIA** (Default) | `niri-nvidia` | Personal laptop with dedicated NVIDIA GPU |
+| **Niri Generic** (Planned) | `niri` | Desktop / work laptop with AMD or Intel graphics |
 
-## Verification
+### Rebasing an Existing Atomic Fedora System
 
-These images are signed with [Sigstore](https://www.sigstore.dev/)'s [cosign](https://github.com/sigstore/cosign). You can verify the signature by downloading the `cosign.pub` file from this repo and running the following command:
+Replace `<flavor>` with your target flavor (e.g. `niri-nvidia` or `niri`):
+
+1. **Rebase to the unsigned image** to import container signing keys and policies:
+   ```bash
+   rpm-ostree rebase ostree-unverified-registry:ghcr.io/treindev/trein.os:<flavor>
+   ```
+2. **Reboot** to boot into the new image:
+   ```bash
+   systemctl reboot
+   ```
+3. **Rebase to the signed image**:
+   ```bash
+   rpm-ostree rebase ostree-image-signed:docker://ghcr.io/treindev/trein.os:<flavor>
+   ```
+4. **Reboot** to complete verification:
+   ```bash
+   systemctl reboot
+   ```
+
+### Verification
+
+Verify image signatures manually using `cosign.pub` from this repository:
 
 ```bash
-cosign verify --key cosign.pub ghcr.io/treindev/trein.os
+cosign verify --key cosign.pub ghcr.io/treindev/trein.os:<flavor>
 ```
+
+---
+
+## Development Environment (`devbox`)
+
+Per [ADR-0001](docs/adr/0001-distrobox-first-development-environment.md), the host image remains lean and stable. Compilers, runtimes, and graphical IDEs are isolated inside a mutable Distrobox container named `devbox`.
+
+- **Current Implementation**: On first login, `init-devbox.service` provisions a Fedora toolbox container named `devbox`, installs Visual Studio Code from the Microsoft repository, and exports the VS Code desktop app.
+- **Planned Enhancements ([#6](https://github.com/treindev/trein.os/issues/6))**:
+  - Declarative container assembly via `distrobox.ini` (`distrobox assemble`)
+  - NVIDIA GPU driver passthrough (`nvidia=true`)
+  - Exported CLI binaries (enabling `code ./project` directly from host shells)
+  - Seamless entry command (`devbox` wrapper)
+  - Background auto-update service and timer on boot
+
+---
+
+## Dotfiles & Machine Customization
+
+Per [ADR-0003](docs/adr/0003-chezmoi-for-user-dotfiles.md), machine-specific configurations (such as multi-monitor layouts) and user dotfiles are decoupled from the host image:
+
+- `/etc/skel/` provides fallback compositor and shell defaults for unconfigured user accounts.
+- Active dotfiles, per-machine monitor geometries, and keybinding overrides are managed via **Chezmoi**.
+- **Planned Migration ([#5](https://github.com/treindev/trein.os/issues/5))**: Moving personal Niri configs and templated display profiles to an external dotfiles repository via BlueBuild's official `chezmoi` module.
+
+---
+
+## Repository Structure
+
+```
+trein.os/
+├── CONTEXT.md               # Domain vocabulary and ubiquitous terms
+├── AGENTS.md                # Agent workflow rules and guidelines
+├── recipes/                 # BlueBuild image definitions
+│   ├── fedora-niri-nvidia-latest.yml
+│   └── base/                # Reusable module snippets
+│       ├── common.yml       # Base packages, fonts, flatpaks, user services
+│       ├── niri.yml         # Niri compositor and DMS shell
+│       └── nvidia.yml       # Kernel modules and drivers
+├── files/                   # Root filesystem overlays
+│   ├── base/                # Systemd units and core system files
+│   └── niri/                # Greetd configs and skeleton defaults
+├── docs/
+│   ├── adr/                 # Architecture Decision Records
+│   │   ├── 0001-distrobox-first-development-environment.md
+│   │   ├── 0002-flavor-tagged-container-images.md
+│   │   └── 0003-chezmoi-for-user-dotfiles.md
+│   └── agents/              # Agent skills and tracker documentation
+└── cosign.pub               # Public key for container verification
+```
+
+---
+
+## License
+
+See [LICENSE](LICENSE).
