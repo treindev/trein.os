@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# /usr/libexec/devbox-update
+# Background updater for Devbox container with non-intrusive desktop notifications.
+# Reference: ADR-0001 (Distrobox-first development environment)
+
+set -uo pipefail
+
+DEVBOX_NAME="${DEVBOX_NAME:-devbox}"
+
+# If the container does not exist, exit cleanly without error
+if ! distrobox list 2>/dev/null | grep -qw "${DEVBOX_NAME}"; then
+    exit 0
+fi
+
+send_notification() {
+    local urgency="$1"
+    local title="$2"
+    local message="$3"
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -u "${urgency}" -a "Devbox" -i "system-software-update" "${title}" "${message}" 2>/dev/null || true
+    fi
+}
+
+send_notification "low" "Devbox Update" "Checking and applying updates in the background..."
+
+if distrobox upgrade "${DEVBOX_NAME}"; then
+    send_notification "low" "Devbox Update" "Devbox packages updated successfully."
+    exit 0
+else
+    send_notification "normal" "Devbox Update" "Devbox package update encountered an issue."
+    exit 1
+fi

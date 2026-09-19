@@ -1,0 +1,9 @@
+[Unit]
+Description=Asynchronous Devbox background update timer
+Documentation=https://github.com/treindev/trein.os
+
+[Timer]
+OnStartupSec=5m
+
+[Install]
+WantedBy=timers.target
