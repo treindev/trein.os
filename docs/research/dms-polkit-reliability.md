@@ -124,7 +124,7 @@ This triggers `PolkitAgent::componentComplete()`, which assigns the default D-Bu
 **Live Host Verification**:
 On the running workstation, checking the systemd user journal confirms successful registration:
 ```text
-Sep 19 16:18:14 trein-laptop dms[4182]:   INFO qml: [PolkitService:80] Initialized successfully
+Sep 19 16:18:14 localhost dms[4182]:   INFO qml: [PolkitService:80] Initialized successfully
 ```
 
 ---
@@ -300,8 +300,8 @@ To verify that the execution chain reaches the system authentication backend cle
 
 The resulting system journal logs verify the exact call stack:
 ```text
-Sep 19 16:50:50 trein-laptop polkit-agent-helper-1[24513]: PAM unable to dlopen(/usr/lib64/security/pam_fprintd.so): /usr/lib64/security/pam_fprintd.so: cannot open shared object file: No such file or directory
-Sep 19 16:50:50 trein-laptop polkit-agent-helper-1[24513]: PAM adding faulty module: /usr/lib64/security/pam_fprintd.so
+Sep 19 16:50:50 localhost polkit-agent-helper-1[24513]: PAM unable to dlopen(/usr/lib64/security/pam_fprintd.so): /usr/lib64/security/pam_fprintd.so: cannot open shared object file: No such file or directory
+Sep 19 16:50:50 localhost polkit-agent-helper-1[24513]: PAM adding faulty module: /usr/lib64/security/pam_fprintd.so
 ```
 
 **Key Insights from Live Trace**:
