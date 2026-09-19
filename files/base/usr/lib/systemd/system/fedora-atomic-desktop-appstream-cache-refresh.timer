@@ -1,0 +1,10 @@
+[Unit]
+Description=Delayed AppStream Cache Refresh
+Documentation=https://gitlab.com/fedora/ostree/sig/-/work_items/103
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1d
+
+[Install]
+WantedBy=timers.target
