@@ -12,7 +12,9 @@ def create_mock_distrobox(tmpdir, container_exists=True):
     mock_bin = Path(tmpdir) / "distrobox"
     log_file = Path(tmpdir) / "distrobox.log"
     container_output = (
-        'echo "devbox | running | registry.fedoraproject.org/fedora-toolbox:latest"'
+        'echo "ID | NAME | STATUS | IMAGE"\n'
+        'echo "1 | devbox | running | registry.fedoraproject.org/fedora-toolbox:latest"\n'
+        'for i in $(seq 1 1000); do echo "c$i | box-$i | running | registry.fedoraproject.org/fedora-toolbox:latest"; done'
         if container_exists
         else "true"
     )
