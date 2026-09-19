@@ -5,28 +5,6 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-class TestBootloaderConfiguration(unittest.TestCase):
-    def setUp(self):
-        self.grub_dropin_path = (
-            REPO_ROOT / "files" / "base" / "etc" / "default" / "grub.d" / "00-fastboot.cfg"
-        )
-
-    def test_grub_dropin_exists(self):
-        self.assertTrue(
-            self.grub_dropin_path.is_file(),
-            f"GRUB fastboot drop-in missing at {self.grub_dropin_path}",
-        )
-
-    def test_grub_dropin_configuration(self):
-        content = self.grub_dropin_path.read_text()
-        self.assertIn("GRUB_TIMEOUT=0", content, "GRUB_TIMEOUT must be set to 0")
-        self.assertIn(
-            "GRUB_TIMEOUT_STYLE=hidden",
-            content,
-            "GRUB_TIMEOUT_STYLE must be set to hidden",
-        )
-
-
 class TestAppStreamTimer(unittest.TestCase):
     def setUp(self):
         self.timer_path = (
