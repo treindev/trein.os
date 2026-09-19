@@ -7,10 +7,28 @@ on:
   push:
     branches:
       - main
-    paths-ignore: # don't rebuild if only documentation has changed
+    paths-ignore: # don't rebuild if only non-image files changed
       - "**.md"
+      - "docs/**"
+      - "tests/**"
+      - ".agents/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".gitignore"
+      - "LICENSE"
+      - "skills-lock.json"
 
   pull_request:
+    branches:
+      - main
+    paths-ignore: # don't rebuild PRs if only non-image files changed
+      - "**.md"
+      - "docs/**"
+      - "tests/**"
+      - ".agents/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".gitignore"
+      - "LICENSE"
+      - "skills-lock.json"
   workflow_dispatch: # allow manually triggering builds
 concurrency:
   # only run one build at a time
