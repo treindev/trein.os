@@ -9,7 +9,7 @@ DEVBOX_NAME="${DEVBOX_NAME:-devbox}"
 DEVBOX_MANIFEST="${DEVBOX_MANIFEST:-/etc/distrobox/distrobox.ini}"
 
 assemble_if_needed() {
-    if ! distrobox list 2>/dev/null | grep -qw "${DEVBOX_NAME}"; then
+    if ! distrobox list 2>/dev/null | grep -w "${DEVBOX_NAME}" >/dev/null; then
         if [ -f "${DEVBOX_MANIFEST}" ]; then
             echo "Devbox container '${DEVBOX_NAME}' not found. Assembling from ${DEVBOX_MANIFEST}..." >&2
             distrobox assemble create --file "${DEVBOX_MANIFEST}"

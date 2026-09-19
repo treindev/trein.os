@@ -8,7 +8,7 @@ set -uo pipefail
 DEVBOX_NAME="${DEVBOX_NAME:-devbox}"
 
 # If the container does not exist, exit cleanly without error
-if ! distrobox list 2>/dev/null | grep -qw "${DEVBOX_NAME}"; then
+if ! distrobox list 2>/dev/null | grep -w "${DEVBOX_NAME}" >/dev/null; then
     exit 0
 fi
 
