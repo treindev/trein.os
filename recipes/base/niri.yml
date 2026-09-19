@@ -4,7 +4,7 @@ modules:
   - type: files
     files:
       - source: niri
-      - destination: /
+        destination: /
 
   # Fast-Moving / COPR Packages (Frequent updates)
   - type: dnf

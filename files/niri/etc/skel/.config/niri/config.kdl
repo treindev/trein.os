@@ -19,8 +19,6 @@ include "binds.kdl"
 include "input.kdl"
 include "window-rule.kdl"
 
-spawn-at-startup "dms" "run"
-spawn-at-startup "bash" "-c" "wl-paste --watch cliphist store &"
 spawn-at-startup "dbus-update-activation-environment" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP" "QT_QPA_PLATFORM"
 
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
