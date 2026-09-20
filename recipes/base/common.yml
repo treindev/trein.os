@@ -41,8 +41,14 @@ modules:
         - virt-install
         - virt-manager
         - power-profiles-daemon
-        - flameshot
         - bolt
+        - playerctl
+        - brightnessctl
+        - grim
+        - slurp
+        - swappy
+        - adw-gtk3-theme
+        - cups-pk-helper
     remove:
       packages:
         - firefox
