@@ -36,4 +36,16 @@ Terminal=false
 Type=Application
 Categories=Development;IDE;
 StartupWMClass=antigravity
+MimeType=x-scheme-handler/antigravity;x-scheme-handler/antigravity-ide;
 EOF
+
+# 5. Ensure xdg-open delegates to host browser for OAuth and external URLs
+if [ -f /usr/bin/distrobox-host-exec ]; then
+    sudo ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/xdg-open
+fi
+
+# 6. Register URL scheme handler inside container and on host
+xdg-mime default antigravity.desktop x-scheme-handler/antigravity x-scheme-handler/antigravity-ide 2>/dev/null || true
+if command -v distrobox-host-exec >/dev/null 2>&1; then
+    distrobox-host-exec xdg-mime default devbox-antigravity.desktop x-scheme-handler/antigravity x-scheme-handler/antigravity-ide 2>/dev/null || true
+fi
