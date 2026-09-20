@@ -69,17 +69,58 @@ class TestDevboxManifest(unittest.TestCase):
         self.assertIn("vscode", pre_hooks, "VS Code repository config must be in pre_init_hooks")
         self.assertIn("test -f", pre_hooks, "pre_init_hooks must contain an idempotency check for offline safety")
 
-        # init_hooks (Zed & Antigravity)
+        # init_hooks (Zed, agy CLI, & Antigravity 2.0 helper script)
         self.assertIn("init_hooks", devbox)
         init_hooks = devbox.get("init_hooks")
-        self.assertIn("zed.dev/install.sh", init_hooks, "Zed installation hook missing in init_hooks")
-        self.assertIn("antigravity", init_hooks, "Antigravity installation hook missing in init_hooks")
+        expected_hook_tokens = [
+            ("zed.dev/install.sh", "Zed installation hook missing in init_hooks"),
+            ("antigravity.google/cli/install.sh", "Antigravity CLI hook missing in init_hooks"),
+            ("command -v antigravity", "Antigravity 2.0 must have idempotency check using command -v"),
+            ("/run/host/usr/libexec/devbox-init-antigravity", "Antigravity 2.0 helper script missing in init_hooks"),
+        ]
+        for token, msg in expected_hook_tokens:
+            self.assertIn(token, init_hooks, msg)
 
         # Exported apps and binaries
         apps = devbox.get("exported_apps", "").strip('"').split()
         self.assertIn("code", apps)
         self.assertIn("zed", apps)
-        self.assertEqual(devbox.get("exported_bins", "").strip(' "'), "/usr/bin/code")
+        self.assertIn("antigravity", apps)
+        bins = devbox.get("exported_bins", "").strip(' "').split()
+        self.assertIn("/usr/bin/code", bins)
+        self.assertIn("/usr/local/bin/antigravity", bins)
+
+
+class TestDevboxAntigravityInit(unittest.TestCase):
+    def setUp(self):
+        self.script_path = REPO_ROOT / "files" / "base" / "usr" / "libexec" / "devbox-init-antigravity"
+
+    def test_script_exists_and_executable(self):
+        self.assertTrue(self.script_path.is_file(), f"Antigravity init script missing at {self.script_path}")
+        self.assertTrue(os.access(self.script_path, os.X_OK), f"Antigravity init script {self.script_path} is not executable")
+
+    def test_script_syntax(self):
+        if not self.script_path.is_file():
+            self.skipTest("Antigravity init script does not exist yet")
+        res = subprocess.run(["bash", "-n", str(self.script_path)], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"Bash syntax error in init script: {res.stderr}")
+
+    def test_script_content(self):
+        if not self.script_path.is_file():
+            self.skipTest("Antigravity init script does not exist yet")
+        content = self.script_path.read_text()
+        expected_tokens = [
+            ("/opt/antigravity", "Target directory /opt/antigravity missing in init script"),
+            ("antigravity-logo.png", "Logo URL missing in init script"),
+            ("chown -R", "Ownership grant (chown -R) missing in init script for in-app updates"),
+            ("/usr/local/bin/antigravity", "Binary wrapper path missing in init script"),
+            ("--ozone-platform-hint=auto", "Wayland ozone platform hint missing in init script wrapper"),
+            ("/usr/share/applications/antigravity.desktop", "Desktop file path missing in init script"),
+            ("StartupWMClass=antigravity", "StartupWMClass missing in desktop file"),
+            ("Categories=Development;IDE;", "Categories missing in desktop file"),
+        ]
+        for token, msg in expected_tokens:
+            self.assertIn(token, content, msg)
 
 
 class TestDevboxWrapper(unittest.TestCase):

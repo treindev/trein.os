@@ -65,8 +65,8 @@ Per [ADR-0001](docs/adr/0001-distrobox-first-development-environment.md), the ho
 
 - **Declarative Assembly**: Defined via `/etc/distrobox/distrobox.ini` (`files/base/etc/distrobox/distrobox.ini`) using `distrobox assemble`. Provisioned seamlessly on first login by `init-devbox.service`.
 - **Graphics & Hardware**: Dedicated NVIDIA GPU passthrough enabled (`nvidia=true`).
-- **Tooling & IDEs**: Pre-initialization hooks configure external repositories (VS Code RPM repository & Microsoft signing key). Automatic hooks bootstrap development IDEs (VS Code, Zed, and Antigravity CLI).
-- **Application & Binary Exports**: GUI applications (`code`, `zed`) are exported to host desktop menus, and CLI commands (`/usr/bin/code`) are exported directly into host shells.
+- **Tooling & IDEs**: Pre-initialization hooks configure external repositories (VS Code RPM repository & Microsoft signing key). Automatic hooks bootstrap development IDEs (VS Code, Zed, Antigravity 2.0, and Antigravity CLI).
+- **Application & Binary Exports**: GUI applications (`code`, `zed`, `antigravity`) are exported to host desktop menus, and CLI commands (`/usr/bin/code`, `/usr/local/bin/antigravity`) are exported directly into host shells.
 - **Host Wrapper Command**: Running `devbox` (or `devbox <command>`) directly from host shells (Fish, Bash, etc.) enters the container or executes commands within it.
 - **Background Auto-Updates**: `devbox-update.timer` triggers asynchronously ~5 minutes after login (`OnStartupSec=5m`) to run `distrobox upgrade devbox` with non-intrusive notifications.
 

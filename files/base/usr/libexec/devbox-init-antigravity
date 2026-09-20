@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# /usr/libexec/devbox-init-antigravity
+# Bootstraps Antigravity 2.0 inside Devbox container with native Wayland and desktop launcher.
+# Reference: ADR-0001 (Distrobox-first development environment)
+
+set -euo pipefail
+
+TARGET_DIR="/opt/antigravity"
+TARBALL_URL="https://storage.googleapis.com/antigravity-public/antigravity-hub/2.15.0-6576870427328512/linux-x64/Antigravity.tar.gz"
+LOGO_URL="https://antigravity.google/assets/image/antigravity-logo.png"
+
+# 1. Download and extract archive into /opt/antigravity
+sudo mkdir -p "${TARGET_DIR}"
+curl -fsSL "${TARBALL_URL}" | sudo tar -xz -C "${TARGET_DIR}" --strip-components=1
+sudo chown -R "$(id -u):$(id -g)" "${TARGET_DIR}"
+
+# 2. Install Wayland wrapper launcher
+cat << 'EOF' | sudo tee /usr/local/bin/antigravity >/dev/null
+#!/usr/bin/env bash
+exec /opt/antigravity/antigravity --ozone-platform-hint=auto "$@"
+EOF
+sudo chmod +x /usr/local/bin/antigravity
+
+# 3. Fetch application icon for desktop launcher
+sudo curl -fsSL "${LOGO_URL}" -o /usr/share/pixmaps/antigravity.png 2>/dev/null || true
+
+# 4. Generate desktop application entry
+cat << 'EOF' | sudo tee /usr/share/applications/antigravity.desktop >/dev/null
+[Desktop Entry]
+Name=Antigravity
+GenericName=AI Agent Command Center
+Comment=Antigravity - Agentic Desktop Application
+Exec=/usr/local/bin/antigravity %U
+Icon=antigravity
+Terminal=false
+Type=Application
+Categories=Development;IDE;
+StartupWMClass=antigravity
+EOF
