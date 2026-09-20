@@ -93,3 +93,8 @@ modules:
           - com.calibre_ebook.calibre
           - io.github.kolunmi.Bazaar
           - com.github.tchx84.Flatseal
+          - com.spotify.Client
+          - org.chromium.Chromium
+          - com.protonvpn.www
+          - org.jellyfin.JellyfinDesktop
+          - org.qbittorrent.qBittorrent
