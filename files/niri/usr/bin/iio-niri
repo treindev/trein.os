@@ -4,11 +4,11 @@
 Listens to accelerometer orientation events from iio-sensor-proxy (via monitor-sensor)
 and commands Niri to rotate the target output display.
 
-Orientation Mapping (Niri counter-clockwise degrees):
+Orientation Mapping (Niri transform degrees):
 - normal    -> normal
 - bottom-up -> 180
-- left-up   -> 270
-- right-up  -> 90
+- left-up   -> 90
+- right-up  -> 270
 """
 
 import argparse
@@ -23,8 +23,8 @@ import sys
 ORIENTATION_MAP = {
     "normal": "normal",
     "bottom-up": "180",
-    "left-up": "270",
-    "right-up": "90",
+    "left-up": "90",
+    "right-up": "270",
 }
 
 # Regex matching monitor-sensor output lines:

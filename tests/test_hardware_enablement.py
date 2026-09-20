@@ -76,11 +76,15 @@ class TestHardwareEnablement(unittest.TestCase):
 
         content = script_path.read_text()
         self.assertIn("monitor-sensor", content)
-        self.assertIn("normal", content)
-        self.assertIn("180", content)
-        self.assertIn("270", content)
-        self.assertIn("90", content)
         self.assertIn("niri", content)
+
+        namespace = {}
+        exec(content, namespace)
+        orientation_map = namespace["ORIENTATION_MAP"]
+        self.assertEqual(orientation_map.get("normal"), "normal")
+        self.assertEqual(orientation_map.get("bottom-up"), "180")
+        self.assertEqual(orientation_map.get("left-up"), "90")
+        self.assertEqual(orientation_map.get("right-up"), "270")
 
     def test_iio_niri_user_service(self):
         """Verify iio-niri systemd user unit exists and targets eDP-1."""
