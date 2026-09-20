@@ -26,3 +26,12 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 hotkey-overlay {
     skip-at-startup
 }
+
+switch-events {
+    tablet-mode-on {
+        spawn "notify-send" "-i" "input-tablet" "Tablet Mode" "Display autorotation active"
+    }
+    tablet-mode-off {
+        spawn "notify-send" "-i" "video-display" "Laptop Mode" "Display locked to normal"
+    }
+}

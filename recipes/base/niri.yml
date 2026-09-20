@@ -30,3 +30,4 @@ modules:
     snippets:
       - mkdir -p /etc/systemd/user/niri.service.wants
       - ln -s /usr/lib/systemd/user/dms.service /etc/systemd/user/niri.service.wants/dms.service
+      - ln -s /usr/lib/systemd/user/iio-niri.service /etc/systemd/user/niri.service.wants/iio-niri.service
