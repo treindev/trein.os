@@ -73,6 +73,8 @@ class TestDevboxManifest(unittest.TestCase):
         self.assertIn("init_hooks", devbox)
         init_hooks = devbox.get("init_hooks")
         expected_hook_tokens = [
+            ("xdg-open", "xdg-open host delegation hook missing in init_hooks"),
+            ("distrobox-host-exec", "distrobox-host-exec missing in xdg-open hook"),
             ("zed.dev/install.sh", "Zed installation hook missing in init_hooks"),
             ("antigravity.google/cli/install.sh", "Antigravity CLI hook missing in init_hooks"),
             ("command -v antigravity", "Antigravity 2.0 must have idempotency check using command -v"),
@@ -118,6 +120,9 @@ class TestDevboxAntigravityInit(unittest.TestCase):
             ("/usr/share/applications/antigravity.desktop", "Desktop file path missing in init script"),
             ("StartupWMClass=antigravity", "StartupWMClass missing in desktop file"),
             ("Categories=Development;IDE;", "Categories missing in desktop file"),
+            ("MimeType=x-scheme-handler/antigravity;x-scheme-handler/antigravity-ide;", "MimeType scheme handler missing in desktop file"),
+            ("/usr/local/bin/xdg-open", "xdg-open host delegation missing in init script"),
+            ("xdg-mime default", "xdg-mime default registration missing in init script"),
         ]
         for token, msg in expected_tokens:
             self.assertIn(token, content, msg)
