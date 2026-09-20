@@ -5,8 +5,13 @@ output "Dell Inc. DELL P2425D HT67D94" {
     position x=-4000 y=-700
 }
 output "Dell Inc. DELL U3225QE 65ZQKF4" {
+    // Mode Options (NVIDIA Quadro P2000 DP 1.4 HBR3 without DSC):
+    // 1. High-Refresh Workflow (Ultra-Smooth 120Hz scrolling, scale 1.0):
     mode "2560x1440@119.998"
-    position x=-2560 y=-350
     scale 1
+    // 2. Precision Typography Workflow (Native 4K 60Hz, integer/fractional scale):
+    // mode "3840x2160@59.997"
+    // scale 1.25 // or scale 1.5
+    position x=-2560 y=-350
     focus-at-startup
 }

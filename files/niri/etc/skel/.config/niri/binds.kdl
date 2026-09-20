@@ -12,6 +12,13 @@ binds {
     XF86AudioPrev        allow-when-locked=true { spawn-sh "playerctl previous"; }
     XF86AudioNext        allow-when-locked=true { spawn-sh "playerctl next"; }
 
+    // Hardware display brightness synchronization across internal backlight and external DDC/CI displays
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "monctl" "brightness" "+5"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "monctl" "brightness" "-5"; }
+
+    // Hardware color gamut clamp toggle for Dell U3225QE (sRGB / DCI-P3)
+    Mod+Shift+C hotkey-overlay-title="Toggle Monitor Color Gamut (sRGB / DCI-P3)" { spawn "monctl" "preset" "toggle"; }
+
     Mod+O repeat=false { toggle-overview; }
     Mod+Q repeat=false { close-window; }
 
