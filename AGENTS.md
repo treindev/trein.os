@@ -6,7 +6,7 @@ Issues live in GitHub Issues (`github.com/treindev/trein.os`). See `docs/agents/
 
 ### Pull requests
 
-Agents are never allowed to merge pull requests. All pull requests must be submitted for human review. The human user is the sole reviewer and merger of PRs.
+Agents are not allowed to merge pull requests, unless explicitly instructed by the human user. By default, all pull requests must be submitted for human review.
 
 ### Triage labels
 

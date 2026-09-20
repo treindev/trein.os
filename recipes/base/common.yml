@@ -30,7 +30,6 @@ modules:
         - btop
         - fish
         - ddcutil
-        - mako
         - xdg-desktop-portal-gnome
         - gnome-keyring
         - nautilus
@@ -68,7 +67,6 @@ modules:
         - fedora-atomic-desktop-appstream-cache-refresh.service
     user:
       enabled:
-        - mako.service
         - plasma-polkit-agent.service
         - init-devbox.service
         - devbox-update.timer
