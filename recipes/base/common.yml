@@ -33,7 +33,7 @@ modules:
         - xdg-desktop-portal-gnome
         - gnome-keyring
         - nautilus
-        - polkit-kde
+        - iio-sensor-proxy
         - libvirt-daemon-config-network
         - libvirt-daemon-kvm
         - qemu-kvm
@@ -67,13 +67,13 @@ modules:
     system:
       enabled:
         - fedora-atomic-desktop-appstream-cache-refresh.timer
+        - iio-sensor-proxy.service
       disabled:
         - NetworkManager-wait-online.service
         - rpc-statd-notify.service
         - fedora-atomic-desktop-appstream-cache-refresh.service
     user:
       enabled:
-        - plasma-polkit-agent.service
         - init-devbox.service
         - devbox-update.timer
 

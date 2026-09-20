@@ -1,0 +1,5 @@
+# HP ZBook Studio x360 convertible input inhibition fallback permissions
+# Grants group input write access to sysfs inhibited attributes for internal keyboard and touchpad.
+# Reference: docs/research/zbook-sensor-autorotation.md
+SUBSYSTEM=="input", ATTR{name}=="AT Translated Set 2 keyboard", ATTR{inhibited}=="0", GROUP="input", MODE="0664"
+SUBSYSTEM=="input", ATTR{name}=="SYNA307B:00 06CB:CD46 Touchpad", ATTR{inhibited}=="0", GROUP="input", MODE="0664"

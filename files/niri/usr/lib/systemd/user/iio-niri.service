@@ -1,0 +1,12 @@
+[Unit]
+Description=IIO Niri Auto-Rotation Daemon
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/iio-niri listen --target eDP-1
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=graphical-session.target

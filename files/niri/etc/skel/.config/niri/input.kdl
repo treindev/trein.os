@@ -15,4 +15,12 @@ input {
 
     trackpoint {
     }
+
+    touch {
+        map-to-output "eDP-1"
+    }
+
+    tablet {
+        map-to-output "eDP-1"
+    }
 }

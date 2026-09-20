@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""IIO Niri Auto-Rotation Daemon.
+
+Listens to accelerometer orientation events from iio-sensor-proxy (via monitor-sensor)
+and commands Niri to rotate the target output display.
+
+Orientation Mapping (Niri transform degrees):
+- normal    -> normal
+- bottom-up -> 180
+- left-up   -> 90
+- right-up  -> 270
+"""
+
+import argparse
+import logging
+import os
+import re
+import signal
+import subprocess
+import sys
+
+# Mapping of iio-sensor-proxy orientations to Niri output transforms
+ORIENTATION_MAP = {
+    "normal": "normal",
+    "bottom-up": "180",
+    "left-up": "90",
+    "right-up": "270",
+}
+
+# Regex matching monitor-sensor output lines:
+# "=== Has accelerometer (orientation: normal) ==="
+# "Accelerometer orientation changed: bottom-up"
+ORIENTATION_PATTERN = re.compile(
+    r"(?:orientation changed:\s*|orientation:\s*)([a-zA-Z0-9_-]+)",
+    re.IGNORECASE,
+)
+
+
+def rotate_output(target: str, transform: str) -> bool:
+    """Invokes niri msg output <target> transform <transform>."""
+    cmd = ["niri", "msg", "output", target, "transform", transform]
+    try:
+        logging.info("Applying transform '%s' to output '%s'", transform, target)
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if res.returncode != 0:
+            logging.warning("niri msg returned %d: %s", res.returncode, res.stderr.strip())
+            return False
+        return True
+    except FileNotFoundError:
+        logging.error("niri binary not found in PATH")
+        return False
+    except Exception as e:
+        logging.error("Failed to execute niri transform: %s", e)
+        return False
+
+
+def listen_loop(target: str) -> int:
+    """Runs monitor-sensor and forwards parsed orientation updates to Niri."""
+    cmd = ["monitor-sensor"]
+    logging.info("Starting monitor-sensor for target '%s'...", target)
+
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
+    except FileNotFoundError:
+        logging.error(
+            "monitor-sensor not found. Ensure iio-sensor-proxy is installed and running."
+        )
+        return 1
+    except Exception as e:
+        logging.error("Failed to start monitor-sensor: %s", e)
+        return 1
+
+    current_transform = None
+
+    def handle_signal(sig, frame):
+        logging.info("Signal %d received, stopping monitor-sensor...", sig)
+        proc.terminate()
+        try:
+            proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
+    try:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            match = ORIENTATION_PATTERN.search(line)
+            if match:
+                raw_orientation = match.group(1).lower()
+                transform = ORIENTATION_MAP.get(raw_orientation)
+                if transform and transform != current_transform:
+                    if rotate_output(target, transform):
+                        current_transform = transform
+                    else:
+                        logging.warning(
+                            "Could not apply transform '%s' for orientation '%s'",
+                            transform,
+                            raw_orientation,
+                        )
+                elif not transform:
+                    logging.debug("Ignoring unhandled orientation: %s", raw_orientation)
+        proc.wait()
+        return proc.returncode or 0
+    except Exception as e:
+        logging.error("Exception in listen loop: %s", e)
+        proc.terminate()
+        return 1
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="IIO Niri auto-rotation daemon for convertible laptops."
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose debug logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="subcommand", help="Subcommands")
+
+    listen_parser = subparsers.add_parser(
+        "listen", help="Listen for accelerometer orientation changes and rotate output"
+    )
+    listen_parser.add_argument(
+        "--target",
+        default="eDP-1",
+        help="Target output name to transform (default: eDP-1)",
+    )
+
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s [%(levelname)s] iio-niri: %(message)s",
+    )
+
+    # Default to listening on target if called without subcommand
+    target = getattr(args, "target", "eDP-1")
+    return listen_loop(target)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
