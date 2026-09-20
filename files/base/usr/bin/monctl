@@ -1,0 +1,405 @@
+#!/usr/bin/env python3
+"""Unified Multi-Monitor Display Control Utility (monctl).
+
+Synchronizes brightness across the HP ZBook Studio x360 internal backlight
+(`brightnessctl` / `nvidia_0`) and external Dell monitors via DDC/CI (`ddcutil`),
+manages hardware sRGB color gamut clamping presets on the Dell U3225QE, and
+integrates with Niri and Dank Material Shell (DMS).
+
+Target Hardware Topology:
+- Internal Display: /sys/class/backlight/nvidia_0 (brightnessctl)
+- Secondary Display: Dell P2425D on /dev/i2c-4 (ddcutil)
+- Primary Display: Dell UltraSharp U3225QE on /dev/i2c-6 (ddcutil)
+"""
+
+import argparse
+import glob
+import logging
+import os
+import shutil
+import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from typing import Optional, Tuple
+
+# Physical I2C Bus & Device Configuration with Environment Overrides
+BACKLIGHT_DEVICE = os.getenv("MONCTL_BACKLIGHT_DEVICE", "nvidia_0")
+DELL_P2425D_BUS = int(os.getenv("MONCTL_P2425D_BUS", "4"))
+DELL_U3225QE_BUS = int(os.getenv("MONCTL_U3225QE_BUS", "6"))
+
+# VESA MCCS Virtual Control Panel (VCP) Codes
+VCP_BRIGHTNESS = 0x10
+VCP_CONTRAST = 0x12
+VCP_COLOR_PRESET = 0x14
+
+# Hardware Color Preset Definitions for Dell UltraSharp U3225QE (VCP 0x14)
+COLOR_PRESETS = {
+    "srgb": 0x01,
+    "5000k": 0x04,
+    "p3": 0x05,
+    "dci-p3": 0x05,
+    "6500k": 0x05,
+    "7500k": 0x06,
+    "9300k": 0x08,
+    "user1": 0x0B,
+    "user2": 0x0C,
+}
+
+PRESET_LABELS = {
+    0x01: "sRGB (Factory Clamped ΔE < 2)",
+    0x04: "5000 K",
+    0x05: "Display P3 / DCI-P3 Native (6500 K)",
+    0x06: "7500 K",
+    0x08: "9300 K",
+    0x0B: "User 1 (Custom RGB)",
+    0x0C: "User 2 (Custom RGB)",
+}
+
+
+def is_connector_connected(connector_suffix: str) -> bool:
+    """Checks sysfs DRM connector state to confirm physical connection."""
+    paths = glob.glob(f"/sys/class/drm/card*-{connector_suffix}/status")
+    for p in paths:
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                if f.read().strip() == "connected":
+                    return True
+        except OSError:
+            pass
+    return False
+
+
+def is_bus_available(bus: int) -> bool:
+    """Checks if the I2C device node exists and is physically connected."""
+    if not os.path.exists(f"/dev/i2c-{bus}"):
+        return False
+
+    # Perform instantaneous DRM connector check if known
+    if bus == DELL_U3225QE_BUS:
+        return is_connector_connected("DP-2")
+    elif bus == DELL_P2425D_BUS:
+        return is_connector_connected("HDMI-A-1")
+
+    return True
+
+
+def get_internal_brightness() -> Optional[Tuple[int, int]]:
+    """Reads current and max brightness of the internal backlight via brightnessctl -m.
+
+    Returns (current_brightness, max_brightness) or None.
+    """
+    try:
+        cmd = ["brightnessctl", "-m"]
+        if BACKLIGHT_DEVICE:
+            cmd.extend(["-d", BACKLIGHT_DEVICE])
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=2.0,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            lines = res.stdout.strip().splitlines()
+            if lines:
+                parts = lines[0].split(",")
+                if len(parts) >= 5:
+                    current = int(parts[2])
+                    max_val = int(parts[4])
+                    return current, max_val
+    except Exception as e:
+        logging.debug("Failed reading internal brightness: %s", e)
+    return None
+
+
+def get_ddc_vcp(bus: int, vcp_code: int) -> Optional[int]:
+    """Reads a VCP feature value from an external display via ddcutil --terse.
+
+    Returns current value or None.
+    """
+    if not is_bus_available(bus):
+        return None
+
+    cmd = ["ddcutil", "--bus", str(bus), "getvcp", hex(vcp_code), "--terse"]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=2.0)
+        if res.returncode == 0 and res.stdout.strip():
+            parts = res.stdout.strip().split()
+            if len(parts) >= 4 and parts[2] == "C":
+                return int(parts[3])
+            elif len(parts) >= 4 and parts[2] == "SNC":
+                val_str = parts[3]
+                if val_str.startswith("x") or val_str.startswith("0x"):
+                    return int(val_str.replace("x", "0x"), 16)
+                return int(val_str)
+    except Exception as e:
+        logging.debug("Failed reading VCP 0x%02x on bus %d: %s", vcp_code, bus, e)
+    return None
+
+
+def get_current_brightness() -> int:
+    """Gets the current reference brightness level (0-100%)."""
+    internal = get_internal_brightness()
+    if internal:
+        curr, max_val = internal
+        if max_val > 0:
+            return round((curr / max_val) * 100)
+
+    for bus in (DELL_U3225QE_BUS, DELL_P2425D_BUS):
+        val = get_ddc_vcp(bus, VCP_BRIGHTNESS)
+        if val is not None:
+            return val
+
+    return 50
+
+
+def compute_brightness(current: int, arg: str, is_relative: Optional[bool] = None) -> int:
+    """Computes target brightness percentage clamped to [0, 100].
+
+    Supports relative adjustments ('+5', '-10') and absolute values ('75').
+    """
+    arg = arg.strip()
+    if is_relative is None:
+        is_rel = arg.startswith("+") or arg.startswith("-")
+    else:
+        is_rel = is_relative
+
+    try:
+        val = int(arg)
+    except ValueError:
+        raise ValueError(f"Invalid brightness argument: '{arg}'")
+
+    if is_rel:
+        target = current + val
+    else:
+        target = val
+
+    return max(0, min(100, target))
+
+
+def get_next_preset(current_code: Optional[int]) -> str:
+    """Determines the next preset when toggling.
+
+    Alternates between sRGB (0x01) and DCI-P3 (0x05).
+    """
+    if current_code == 0x01:
+        return "p3"
+    return "srgb"
+
+
+def set_internal_brightness(target_val: int) -> bool:
+    """Sets internal panel backlight via brightnessctl (and triggers DMS OSD if available)."""
+    dms_ok = False
+    try:
+        dms_cmd = ["dms", "ipc", "call", "brightness", "set", str(target_val), ""]
+        res = subprocess.run(dms_cmd, capture_output=True, text=True, check=False, timeout=1.5)
+        if res.returncode == 0:
+            dms_ok = True
+    except Exception as e:
+        logging.debug("DMS IPC brightness call failed: %s", e)
+
+    try:
+        bctl_cmd = ["brightnessctl"]
+        if BACKLIGHT_DEVICE:
+            bctl_cmd.extend(["-d", BACKLIGHT_DEVICE])
+        bctl_cmd.extend(["set", f"{target_val}%"])
+        res = subprocess.run(bctl_cmd, capture_output=True, text=True, check=False, timeout=1.5)
+        return res.returncode == 0 or dms_ok
+    except Exception as e:
+        logging.debug("brightnessctl call failed: %s", e)
+        return dms_ok
+
+
+def set_ddc_brightness(bus: int, target_val: int) -> bool:
+    """Sets brightness on an external monitor via DDC/CI."""
+    if not is_bus_available(bus):
+        logging.debug("Bus /dev/i2c-%d not connected; skipping DDC brightness", bus)
+        return True
+
+    cmd = ["ddcutil", "--bus", str(bus), "setvcp", hex(VCP_BRIGHTNESS), str(target_val)]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=2.5)
+        if res.returncode != 0:
+            logging.warning("ddcutil on bus %d exited with %d: %s", bus, res.returncode, res.stderr.strip())
+            return False
+        return True
+    except Exception as e:
+        logging.warning("Error setting brightness on bus %d: %s", bus, e)
+        return False
+
+
+def set_all_brightness(target_val: int) -> bool:
+    """Dispatches brightness adjustments to all reachable displays in parallel."""
+    target_val = max(0, min(100, target_val))
+    logging.info("Synchronizing brightness to %d%% across all displays...", target_val)
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        f_internal = executor.submit(set_internal_brightness, target_val)
+        f_u3225qe = executor.submit(set_ddc_brightness, DELL_U3225QE_BUS, target_val)
+        f_p2425d = executor.submit(set_ddc_brightness, DELL_P2425D_BUS, target_val)
+
+        r_internal = f_internal.result()
+        r_u3225qe = f_u3225qe.result()
+        r_p2425d = f_p2425d.result()
+
+    return r_internal or r_u3225qe or r_p2425d
+
+
+def notify_desktop(title: str, message: str) -> None:
+    """Sends a desktop notification using notify-send."""
+    if not shutil.which("notify-send"):
+        return
+    try:
+        subprocess.run(
+            ["notify-send", "-a", "monctl", "-i", "video-display", title, message],
+            capture_output=True,
+            check=False,
+            timeout=1.0,
+        )
+    except Exception as e:
+        logging.debug("notify-send failed: %s", e)
+
+
+def set_preset(preset_key: str) -> bool:
+    """Configures the hardware color preset on the Dell UltraSharp U3225QE."""
+    preset_key = preset_key.lower().strip()
+    if preset_key not in COLOR_PRESETS:
+        print(f"Error: Unknown preset '{preset_key}'. Choose from: {', '.join(COLOR_PRESETS.keys())}", file=sys.stderr)
+        return False
+
+    code = COLOR_PRESETS[preset_key]
+    hex_val = f"0x{code:02x}"
+
+    if not is_bus_available(DELL_U3225QE_BUS):
+        print(f"Error: Dell U3225QE I2C bus (/dev/i2c-{DELL_U3225QE_BUS}) not available.", file=sys.stderr)
+        return False
+
+    cmd = ["ddcutil", "--bus", str(DELL_U3225QE_BUS), "setvcp", hex(VCP_COLOR_PRESET), hex_val]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=3.0)
+        if res.returncode != 0:
+            print(f"Error setting preset on Dell U3225QE: {res.stderr.strip()}", file=sys.stderr)
+            return False
+
+        label = PRESET_LABELS.get(code, preset_key.upper())
+        print(f"Dell U3225QE color preset set to: {label} ({hex_val})")
+        notify_desktop("Dell U3225QE Color Gamut", f"Switched to: {label}")
+        return True
+    except Exception as e:
+        print(f"Error executing ddcutil: {e}", file=sys.stderr)
+        return False
+
+
+def toggle_preset() -> bool:
+    """Toggles Dell U3225QE color preset between sRGB and DCI-P3."""
+    current_code = get_ddc_vcp(DELL_U3225QE_BUS, VCP_COLOR_PRESET)
+    next_preset = get_next_preset(current_code)
+    return set_preset(next_preset)
+
+
+def _format_ddc_status(bus: int, name: str, is_primary: bool = False) -> str:
+    """Formats DDC status line for an external display."""
+    if not is_bus_available(bus):
+        return f"{name} (/dev/i2c-{bus}): Disconnected / Offline"
+
+    bright = get_ddc_vcp(bus, VCP_BRIGHTNESS)
+    contrast = get_ddc_vcp(bus, VCP_CONTRAST)
+    bright_str = f"{bright}%" if bright is not None else "Unknown"
+    contrast_str = f"{contrast}%" if contrast is not None else "Unknown"
+    line = f"{name} (/dev/i2c-{bus}): Brightness: {bright_str}, Contrast: {contrast_str}"
+
+    if is_primary:
+        preset_code = get_ddc_vcp(bus, VCP_COLOR_PRESET)
+        preset_str = PRESET_LABELS.get(preset_code, f"Unknown (0x{preset_code:02x})") if preset_code else "Unknown"
+        line += f", Gamut: {preset_str}"
+
+    return line
+
+
+def print_info() -> None:
+    """Prints status information for all connected monitors."""
+    print("=== monctl Display Status ===")
+
+    # Internal Panel
+    internal = get_internal_brightness()
+    if internal:
+        curr, max_val = internal
+        pct = round((curr / max_val) * 100) if max_val > 0 else 0
+        device_label = f"backlight:{BACKLIGHT_DEVICE}" if BACKLIGHT_DEVICE else "backlight"
+        print(f"Internal Panel ({device_label}): {pct}% ({curr}/{max_val})")
+    else:
+        print("Internal Panel: Not available")
+
+    # Dell P2425D
+    print(_format_ddc_status(DELL_P2425D_BUS, "Dell P2425D", is_primary=False))
+
+    # Dell U3225QE
+    print(_format_ddc_status(DELL_U3225QE_BUS, "Dell U3225QE", is_primary=True))
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Unified Multi-Monitor Display Brightness & Color Preset Control",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+
+    # Brightness subcommand
+    parser_bright = subparsers.add_parser("brightness", help="Get or set synchronized display brightness")
+    parser_bright.add_argument(
+        "step_or_val",
+        nargs="?",
+        default=None,
+        help="Target brightness: absolute value (0-100), relative step (+5, -5), or 'get'",
+    )
+
+    # Preset subcommand
+    parser_preset = subparsers.add_parser("preset", help="Get, set, or toggle Dell U3225QE hardware color preset")
+    parser_preset.add_argument(
+        "name",
+        nargs="?",
+        default=None,
+        help="Preset name (srgb, p3, 6500k, 5000k, 7500k, 9300k), 'toggle', or 'get'",
+    )
+
+    # Info subcommand
+    subparsers.add_parser("info", help="Show display hardware status")
+
+    args = parser.parse_args()
+
+    if args.command == "brightness":
+        if args.step_or_val is None or args.step_or_val == "get":
+            print(f"{get_current_brightness()}%")
+            return 0
+        current = get_current_brightness()
+        target = compute_brightness(current, args.step_or_val)
+        success = set_all_brightness(target)
+        return 0 if success else 1
+
+    elif args.command == "preset":
+        if args.name is None or args.name == "get":
+            code = get_ddc_vcp(DELL_U3225QE_BUS, VCP_COLOR_PRESET)
+            if code is not None:
+                print(PRESET_LABELS.get(code, f"0x{code:02x}"))
+                return 0
+            else:
+                print("Unknown / Offline", file=sys.stderr)
+                return 1
+        elif args.name == "toggle":
+            success = toggle_preset()
+            return 0 if success else 1
+        else:
+            success = set_preset(args.name)
+            return 0 if success else 1
+
+    elif args.command == "info":
+        print_info()
+        return 0
+
+    else:
+        parser.print_help()
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
