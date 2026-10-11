@@ -27,6 +27,7 @@ Per [ADR-0002](docs/adr/0002-flavor-tagged-container-images.md), builds are orga
 | :--- | :--- | :--- |
 | **Niri + NVIDIA** (Default) | `niri-nvidia` | Personal laptop with dedicated NVIDIA GPU |
 | **Niri Generic** | `niri` | Desktop / work laptop with AMD or Intel graphics |
+| **Gaming + NVIDIA (Bazzite)** | `gaming-nvidia` | Dedicated gaming setup with Bazzite, KDE Plasma, Niri + DMS, and NVIDIA GPU |
 
 ### Rebasing an Existing Atomic Fedora System
 
@@ -91,8 +92,12 @@ trein.os/
 ├── recipes/                 # BlueBuild image definitions
 │   ├── niri-nvidia.yml      # Niri + NVIDIA flavor
 │   ├── niri.yml             # Niri generic (non-Nvidia) flavor
+│   ├── gaming-nvidia.yml    # Bazzite gaming flavor (Plasma + Niri)
 │   └── base/                # Reusable module snippets
-│       ├── common.yml       # Base packages, fonts, flatpaks, user services
+│       ├── common.yml       # Base packages, fonts, user services
+│       ├── flatpaks.yml     # Shared workstation flatpaks
+│       ├── flatpaks-steam.yml # Dedicated Flatpak Steam
+│       ├── greetd.yml       # Greetd login manager and dms-greeter
 │       ├── niri.yml         # Niri compositor and DMS shell
 │       └── nvidia.yml       # Kernel modules and drivers
 ├── files/                   # Root filesystem overlays

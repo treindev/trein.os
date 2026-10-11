@@ -15,16 +15,9 @@ modules:
       packages:
         - niri
         - dms
-        - dms-greeter
       exclude:
         - waybar
         - alacritty
-
-  # Service Integration & Symlinks
-  - type: systemd
-    system:
-      enabled:
-        - greetd.service
 
   - type: script
     snippets:

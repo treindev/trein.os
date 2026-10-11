@@ -17,7 +17,7 @@ A top-level declarative BlueBuild YAML document defining the base container imag
 _Avoid_: Manifest, build script, Containerfile
 
 **Flavor**:
-A distinct build configuration of the host image targeting specific hardware capabilities (such as `niri-nvidia` or `niri`) published as a dedicated container tag under the unified image repository.
+A distinct build configuration of the host image targeting specific hardware capabilities (such as `niri-nvidia`, `niri`, or `gaming-nvidia`) published as a dedicated container tag under the unified image repository.
 _Avoid_: Variant, edition, release, distro
 
 **Base Module**:

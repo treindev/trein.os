@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  # General Workstation Flatpaks
+  - type: default-flatpaks
+    configurations:
+      - notify: true
+        scope: system
+        install:
+          - org.mozilla.firefox
+          - com.usebottles.bottles
+          - org.prismlauncher.PrismLauncher
+          - com.discordapp.Discord
+          - org.fedoraproject.MediaWriter
+          - com.actualbudget.actual
+          - com.calibre_ebook.calibre
+          - io.github.kolunmi.Bazaar
+          - com.github.tchx84.Flatseal
+          - com.spotify.Client
+          - org.chromium.Chromium
+          - com.protonvpn.www
+          - org.jellyfin.JellyfinDesktop
+          - org.qbittorrent.qBittorrent
