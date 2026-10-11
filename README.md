@@ -31,7 +31,7 @@ Per [ADR-0002](docs/adr/0002-flavor-tagged-container-images.md), builds are orga
 
 ### Rebasing an Existing Atomic Fedora System
 
-Replace `<flavor>` with your target flavor (e.g. `niri-nvidia` or `niri`):
+Replace `<flavor>` with your target flavor (e.g. `niri-nvidia`, `niri`, or `gaming-nvidia`):
 
 1. **Rebase to the unsigned image** to import container signing keys and policies:
    ```bash

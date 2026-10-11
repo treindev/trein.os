@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: trein.os
-description: Fedora 44 (Bazzite) with KDE Plasma, Niri, Dank Material Shell and NVIDIA drivers
+description: Bazzite with KDE Plasma, Niri, Dank Material Shell and NVIDIA drivers
 base-image: ghcr.io/ublue-os/bazzite-nvidia
 image-version: stable
 alt-tags:

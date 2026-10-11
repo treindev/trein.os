@@ -16,17 +16,17 @@ class TestDeclarativeFlatpaks(unittest.TestCase):
         self.flatpak_modules = [m for m in self.content.get("modules", []) if m.get("type") == "default-flatpaks"]
         self.steam_modules = [m for m in self.steam_content.get("modules", []) if m.get("type") == "default-flatpaks"]
 
-    def _get_flatpak_config(self):
-        self.assertTrue(len(self.flatpak_modules) > 0, "No default-flatpaks module found in recipes/base/flatpaks.yml")
-        configs = self.flatpak_modules[0].get("configurations", [])
-        self.assertTrue(len(configs) > 0, "No configurations entry in default-flatpaks module")
+    def _get_module_config(self, modules, module_name):
+        self.assertTrue(len(modules) > 0, f"No default-flatpaks module found in {module_name}")
+        configs = modules[0].get("configurations", [])
+        self.assertTrue(len(configs) > 0, f"No configurations entry in default-flatpaks module for {module_name}")
         return configs[0]
 
+    def _get_flatpak_config(self):
+        return self._get_module_config(self.flatpak_modules, "recipes/base/flatpaks.yml")
+
     def _get_steam_config(self):
-        self.assertTrue(len(self.steam_modules) > 0, "No default-flatpaks module found in recipes/base/flatpaks-steam.yml")
-        configs = self.steam_modules[0].get("configurations", [])
-        self.assertTrue(len(configs) > 0, "No configurations entry in steam default-flatpaks module")
-        return configs[0]
+        return self._get_module_config(self.steam_modules, "recipes/base/flatpaks-steam.yml")
 
     def _get_installed_flatpaks(self):
         config = self._get_flatpak_config()

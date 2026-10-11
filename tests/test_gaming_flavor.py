@@ -17,6 +17,21 @@ class TestGamingFlavor(unittest.TestCase):
         self.niri_recipe_path = REPO_ROOT / "recipes" / "niri.yml"
         self.build_workflow_path = REPO_ROOT / ".github" / "workflows" / "build.yml"
 
+    def _get_from_files(self, recipe_path: Path) -> list[str]:
+        recipe = yaml.safe_load(recipe_path.read_text())
+        modules = recipe.get("modules", [])
+        return [m.get("from-file") for m in modules if "from-file" in m]
+
+    def _get_flatpak_install_list(self, module_path: Path) -> list[str]:
+        content = yaml.safe_load(module_path.read_text())
+        modules = content.get("modules", [])
+        for mod in modules:
+            if mod.get("type") == "default-flatpaks":
+                configs = mod.get("configurations", [])
+                if configs:
+                    return configs[0].get("install", [])
+        return []
+
     def test_gaming_nvidia_recipe_structure(self):
         self.assertTrue(self.gaming_recipe_path.is_file(), f"Missing {self.gaming_recipe_path}")
         recipe = yaml.safe_load(self.gaming_recipe_path.read_text())
@@ -27,8 +42,7 @@ class TestGamingFlavor(unittest.TestCase):
         self.assertIn("gaming-nvidia", recipe.get("alt-tags", []))
         self.assertEqual(recipe.get("platforms"), ["linux/amd64"])
 
-        modules = recipe.get("modules", [])
-        from_files = [m.get("from-file") for m in modules if "from-file" in m]
+        from_files = self._get_from_files(self.gaming_recipe_path)
 
         # Must include common, flatpaks (non-steam), and niri
         self.assertIn("base/common.yml", from_files)
@@ -61,13 +75,8 @@ class TestGamingFlavor(unittest.TestCase):
             self.assertNotIn("greetd.service", enabled, "greetd.service must not be enabled in base/niri.yml")
 
         # niri-nvidia.yml and niri.yml must include base/greetd.yml
-        niri_nvidia = yaml.safe_load(self.niri_nvidia_recipe_path.read_text())
-        niri_nvidia_files = [m.get("from-file") for m in niri_nvidia.get("modules", []) if "from-file" in m]
-        self.assertIn("base/greetd.yml", niri_nvidia_files)
-
-        niri_generic = yaml.safe_load(self.niri_recipe_path.read_text())
-        niri_generic_files = [m.get("from-file") for m in niri_generic.get("modules", []) if "from-file" in m]
-        self.assertIn("base/greetd.yml", niri_generic_files)
+        self.assertIn("base/greetd.yml", self._get_from_files(self.niri_nvidia_recipe_path))
+        self.assertIn("base/greetd.yml", self._get_from_files(self.niri_recipe_path))
 
     def test_flatpaks_modules_decoupled(self):
         self.assertTrue(self.flatpaks_module_path.is_file(), f"Missing {self.flatpaks_module_path}")
@@ -80,21 +89,16 @@ class TestGamingFlavor(unittest.TestCase):
         self.assertEqual(len(flatpak_mods), 0, "default-flatpaks must be extracted from base/common.yml")
 
         # flatpaks.yml must not contain Steam
-        flatpaks_content = yaml.safe_load(self.flatpaks_module_path.read_text())
-        configs = flatpaks_content.get("modules", [])[0].get("configurations", [])
-        installed = configs[0].get("install", [])
+        installed = self._get_flatpak_install_list(self.flatpaks_module_path)
         self.assertNotIn("com.valvesoftware.Steam", installed)
         self.assertIn("org.mozilla.firefox", installed)
 
         # flatpaks-steam.yml must contain Steam
-        steam_content = yaml.safe_load(self.flatpaks_steam_module_path.read_text())
-        steam_configs = steam_content.get("modules", [])[0].get("configurations", [])
-        steam_installed = steam_configs[0].get("install", [])
+        steam_installed = self._get_flatpak_install_list(self.flatpaks_steam_module_path)
         self.assertIn("com.valvesoftware.Steam", steam_installed)
 
         # niri-nvidia and niri must include both flatpak modules
-        niri_nvidia = yaml.safe_load(self.niri_nvidia_recipe_path.read_text())
-        niri_nvidia_files = [m.get("from-file") for m in niri_nvidia.get("modules", []) if "from-file" in m]
+        niri_nvidia_files = self._get_from_files(self.niri_nvidia_recipe_path)
         self.assertIn("base/flatpaks.yml", niri_nvidia_files)
         self.assertIn("base/flatpaks-steam.yml", niri_nvidia_files)
 
