@@ -1,0 +1,10 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  # Steam Flatpak (for non-Bazzite images lacking host RPM Steam)
+  - type: default-flatpaks
+    configurations:
+      - notify: true
+        scope: system
+        install:
+          - com.valvesoftware.Steam

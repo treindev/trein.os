@@ -10,7 +10,11 @@ platforms:
   - linux/amd64
 modules:
   - from-file: base/common.yml
+  - from-file: base/hardware-control.yml
+  - from-file: base/flatpaks.yml
+  - from-file: base/flatpaks-steam.yml
   - from-file: base/niri.yml
+  - from-file: base/greetd.yml
   - from-file: base/nvidia.yml
   - type: os-release
     properties:

@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+name: trein.os
+description: Bazzite with KDE Plasma, Niri, Dank Material Shell and NVIDIA drivers
+base-image: ghcr.io/ublue-os/bazzite-nvidia
+image-version: stable
+alt-tags:
+  - gaming-nvidia
+platforms:
+  - linux/amd64
+modules:
+  - from-file: base/common.yml
+  - from-file: base/flatpaks.yml
+  - from-file: base/niri.yml
+  - type: os-release
+    properties:
+      PRETTY_NAME: trein.os for Gaming Nvidia - Plasma & Niri (FROM Bazzite)
