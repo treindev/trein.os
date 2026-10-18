@@ -29,7 +29,6 @@ modules:
         - distrobox
         - btop
         - fish
-        - ddcutil
         - xdg-desktop-portal-gnome
         - gnome-keyring
         - nautilus
@@ -39,7 +38,6 @@ modules:
         - qemu-kvm
         - virt-install
         - virt-manager
-        - power-profiles-daemon
         - bolt
         - playerctl
         - brightnessctl

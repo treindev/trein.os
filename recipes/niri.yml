@@ -10,6 +10,7 @@ platforms:
   - linux/amd64
 modules:
   - from-file: base/common.yml
+  - from-file: base/hardware-control.yml
   - from-file: base/flatpaks.yml
   - from-file: base/flatpaks-steam.yml
   - from-file: base/niri.yml

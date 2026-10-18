@@ -13,6 +13,7 @@ class TestGamingFlavor(unittest.TestCase):
         self.common_module_path = REPO_ROOT / "recipes" / "base" / "common.yml"
         self.flatpaks_module_path = REPO_ROOT / "recipes" / "base" / "flatpaks.yml"
         self.flatpaks_steam_module_path = REPO_ROOT / "recipes" / "base" / "flatpaks-steam.yml"
+        self.hardware_control_module_path = REPO_ROOT / "recipes" / "base" / "hardware-control.yml"
         self.niri_nvidia_recipe_path = REPO_ROOT / "recipes" / "niri-nvidia.yml"
         self.niri_recipe_path = REPO_ROOT / "recipes" / "niri.yml"
         self.build_workflow_path = REPO_ROOT / ".github" / "workflows" / "build.yml"
@@ -32,6 +33,15 @@ class TestGamingFlavor(unittest.TestCase):
                     return configs[0].get("install", [])
         return []
 
+    def _get_dnf_packages(self, module_path: Path) -> list[str]:
+        content = yaml.safe_load(module_path.read_text())
+        modules = content.get("modules", [])
+        packages = []
+        for mod in modules:
+            if mod.get("type") == "dnf":
+                packages.extend(mod.get("install", {}).get("packages", []))
+        return packages
+
     def test_gaming_nvidia_recipe_structure(self):
         self.assertTrue(self.gaming_recipe_path.is_file(), f"Missing {self.gaming_recipe_path}")
         recipe = yaml.safe_load(self.gaming_recipe_path.read_text())
@@ -49,10 +59,12 @@ class TestGamingFlavor(unittest.TestCase):
         self.assertIn("base/flatpaks.yml", from_files)
         self.assertIn("base/niri.yml", from_files)
 
-        # Must NOT include greetd (uses SDDM), akmods nvidia (in Bazzite), or flatpak steam (in Bazzite)
+        # Must NOT include greetd (uses SDDM), akmods nvidia (in Bazzite), flatpak steam (in Bazzite),
+        # or hardware-control (Bazzite provides tuned-ppd and terra-ddcutil)
         self.assertNotIn("base/greetd.yml", from_files)
         self.assertNotIn("base/nvidia.yml", from_files)
         self.assertNotIn("base/flatpaks-steam.yml", from_files)
+        self.assertNotIn("base/hardware-control.yml", from_files)
 
     def test_greetd_module_decoupled(self):
         self.assertTrue(self.greetd_module_path.is_file(), f"Missing {self.greetd_module_path}")
@@ -101,6 +113,23 @@ class TestGamingFlavor(unittest.TestCase):
         niri_nvidia_files = self._get_from_files(self.niri_nvidia_recipe_path)
         self.assertIn("base/flatpaks.yml", niri_nvidia_files)
         self.assertIn("base/flatpaks-steam.yml", niri_nvidia_files)
+
+    def test_hardware_control_module_decoupled(self):
+        self.assertTrue(self.hardware_control_module_path.is_file(), f"Missing {self.hardware_control_module_path}")
+
+        # hardware-control.yml installs ddcutil and power-profiles-daemon
+        hw_packages = self._get_dnf_packages(self.hardware_control_module_path)
+        self.assertIn("ddcutil", hw_packages)
+        self.assertIn("power-profiles-daemon", hw_packages)
+
+        # common.yml must not contain conflicting ddcutil or power-profiles-daemon
+        common_packages = self._get_dnf_packages(self.common_module_path)
+        self.assertNotIn("ddcutil", common_packages, "ddcutil conflicts with Bazzite terra-ddcutil")
+        self.assertNotIn("power-profiles-daemon", common_packages, "power-profiles-daemon conflicts with Bazzite tuned-ppd")
+
+        # niri-nvidia and niri must include base/hardware-control.yml
+        self.assertIn("base/hardware-control.yml", self._get_from_files(self.niri_nvidia_recipe_path))
+        self.assertIn("base/hardware-control.yml", self._get_from_files(self.niri_recipe_path))
 
     def test_ci_matrix_includes_gaming_nvidia(self):
         workflow = yaml.safe_load(self.build_workflow_path.read_text())

@@ -98,6 +98,7 @@ trein.os/
 │       ├── flatpaks.yml     # Shared workstation flatpaks
 │       ├── flatpaks-steam.yml # Dedicated Flatpak Steam
 │       ├── greetd.yml       # Greetd login manager and dms-greeter
+│       ├── hardware-control.yml # Host hardware control (ddcutil, power-profiles-daemon)
 │       ├── niri.yml         # Niri compositor and DMS shell
 │       └── nvidia.yml       # Kernel modules and drivers
 ├── files/                   # Root filesystem overlays

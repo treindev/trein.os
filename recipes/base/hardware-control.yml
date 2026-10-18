@@ -1,0 +1,9 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  # Host Hardware & Power Control (for base-main images lacking tuned-ppd / terra-ddcutil)
+  - type: dnf
+    install:
+      packages:
+        - ddcutil
+        - power-profiles-daemon
