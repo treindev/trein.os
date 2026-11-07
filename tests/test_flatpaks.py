@@ -48,7 +48,6 @@ class TestDeclarativeFlatpaks(unittest.TestCase):
         installed = self._get_installed_flatpaks()
         baseline_apps = [
             "org.mozilla.firefox",
-            "com.valvesoftware.Steam",
             "com.usebottles.bottles",
             "org.prismlauncher.PrismLauncher",
             "com.discordapp.Discord",
@@ -64,6 +63,14 @@ class TestDeclarativeFlatpaks(unittest.TestCase):
                 installed,
                 f"Baseline flatpak '{app}' must be retained in default-flatpaks install list",
             )
+
+    def test_flatpak_steam_removed_in_favor_of_host_rpm(self):
+        installed = self._get_installed_flatpaks()
+        self.assertNotIn(
+            "com.valvesoftware.Steam",
+            installed,
+            "Flatpak Steam must be removed from default-flatpaks in favor of host-layered RPM Steam (#49)",
+        )
 
     def test_adr0001_heavyweight_ides_excluded(self):
         installed = self._get_installed_flatpaks()
