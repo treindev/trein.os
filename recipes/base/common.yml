@@ -39,7 +39,7 @@ modules:
         - qemu-kvm
         - virt-install
         - virt-manager
-        - power-profiles-daemon
+        - tuned-ppd
         - bolt
         - playerctl
         - brightnessctl

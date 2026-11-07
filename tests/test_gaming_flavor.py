@@ -88,7 +88,8 @@ class TestGamingFlavor(unittest.TestCase):
     def test_common_retains_hardware_control_and_flatpaks(self):
         common_packages = self._get_dnf_packages(self.common_module_path)
         self.assertIn("ddcutil", common_packages)
-        self.assertIn("power-profiles-daemon", common_packages)
+        self.assertIn("tuned-ppd", common_packages)
+        self.assertNotIn("power-profiles-daemon", common_packages)
 
         common_content = yaml.safe_load(self.common_module_path.read_text())
         flatpak_mods = [
