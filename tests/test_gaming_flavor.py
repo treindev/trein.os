@@ -136,6 +136,16 @@ class TestGamingFlavor(unittest.TestCase):
         matrix_recipes = workflow["jobs"]["bluebuild"]["strategy"]["matrix"]["recipe"]
         self.assertIn("gaming-nvidia.yml", matrix_recipes)
 
+    def test_niri_suppresses_xwaylandvideobridge_autostart(self):
+        niri_content = yaml.safe_load(self.niri_module_path.read_text())
+        script_mods = [m for m in niri_content.get("modules", []) if m.get("type") == "script"]
+        snippets = []
+        for sm in script_mods:
+            snippets.extend(sm.get("snippets", []))
+        joined = "\n".join(snippets)
+        self.assertIn("/etc/xdg/autostart/org.kde.xwaylandvideobridge.desktop", joined)
+        self.assertIn("NotShowIn=niri;", joined)
+
 
 if __name__ == "__main__":
     unittest.main()
