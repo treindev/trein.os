@@ -39,7 +39,7 @@ modules:
         - qemu-kvm
         - virt-install
         - virt-manager
-        - power-profiles-daemon
+        - tuned-ppd
         - bolt
         - playerctl
         - brightnessctl
@@ -84,7 +84,6 @@ modules:
         scope: system
         install:
           - org.mozilla.firefox
-          - com.valvesoftware.Steam
           - com.usebottles.bottles
           - org.prismlauncher.PrismLauncher
           - com.discordapp.Discord

@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  # Host Gaming Stack & Hardware Privileges
+  - type: dnf
+    install:
+      packages:
+        - steam
+        - gamemode
+        - gamescope
+        - steam-devices
+
+  # Systemd User Services
+  - type: systemd
+    user:
+      enabled:
+        - gamemoded.service

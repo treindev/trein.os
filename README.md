@@ -6,14 +6,15 @@ An opinionated, immutable Fedora Atomic workstation built with [BlueBuild](https
 
 ## System Overview
 
-- **Host Image**: Fedora Atomic 44 ([Universal Blue `base-main`](https://github.com/ublue-os/base-main))
-- **Compositor**: [Niri](https://github.com/YaLTeR/niri) (infinite scrollable-tiling Wayland compositor)
-- **Desktop Shell & Greeter**: Dank Material Shell (`dms`) with `dms-greeter` running on `greetd`
+- **Host Image**: Fedora Atomic 44 ([Universal Blue `base-main`](https://github.com/ublue-os/base-main) & [`kinoite-main`](https://github.com/ublue-os/main))
+- **Compositor**: [Niri](https://github.com/YaLTeR/niri) (infinite scrollable-tiling Wayland compositor) and KDE Plasma (`gaming-nvidia` dual-session flavor)
+- **Desktop Shell & Greeter**: Dank Material Shell (`dms`) with `dms-greeter` on `greetd` (`niri` flavors) or SDDM (`gaming-nvidia` flavor)
 - **Shell & Terminal**: Fish shell and [Ghostty](https://ghostty.org/)
 - **Graphics / Drivers**: NVIDIA proprietary drivers built via `akmods`
+- **Gaming**: Host-layered RPM Steam (`steam`, `gamemode`, `gamescope`, `steam-devices`) and SteamOS sysctl tuning (`vm.max_map_count = 2147483642`)
 - **Development**: Isolated Distrobox (`devbox`) with exported IDEs (VS Code, Zed, Antigravity)
 - **Virtualization**: Host-layered KVM/QEMU hypervisor with `virt-manager`
-- **Application Layer**: System-level Flatpaks (Firefox, Steam, Bottles, Prism Launcher, Discord, Actual Budget, Calibre, MediaWriter, Bazaar, Flatseal)
+- **Application Layer**: System-level Flatpaks (Firefox, Bottles, Prism Launcher, Discord, Actual Budget, Calibre, MediaWriter, Bazaar, Flatseal)
 
 ---
 
@@ -27,10 +28,11 @@ Per [ADR-0002](docs/adr/0002-flavor-tagged-container-images.md), builds are orga
 | :--- | :--- | :--- |
 | **Niri + NVIDIA** (Default) | `niri-nvidia` | Personal laptop with dedicated NVIDIA GPU |
 | **Niri Generic** | `niri` | Desktop / work laptop with AMD or Intel graphics |
+| **Gaming + NVIDIA (Kinoite)** | `gaming-nvidia` | Multi-monitor gaming & dev setup with KDE Plasma (SDDM), Niri + DMS, and NVIDIA GPU |
 
 ### Rebasing an Existing Atomic Fedora System
 
-Replace `<flavor>` with your target flavor (e.g. `niri-nvidia` or `niri`):
+Replace `<flavor>` with your target flavor (e.g. `niri-nvidia`, `niri`, or `gaming-nvidia`):
 
 1. **Rebase to the unsigned image** to import container signing keys and policies:
    ```bash
@@ -91,8 +93,11 @@ trein.os/
 ├── recipes/                 # BlueBuild image definitions
 │   ├── niri-nvidia.yml      # Niri + NVIDIA flavor
 │   ├── niri.yml             # Niri generic (non-Nvidia) flavor
+│   ├── gaming-nvidia.yml    # Kinoite gaming flavor (Plasma + Niri + NVIDIA)
 │   └── base/                # Reusable module snippets
 │       ├── common.yml       # Base packages, fonts, flatpaks, user services
+│       ├── gaming.yml       # Host RPM Steam, GameMode, Gamescope, udev rules
+│       ├── greetd.yml       # Greetd login manager and dms-greeter
 │       ├── niri.yml         # Niri compositor and DMS shell
 │       └── nvidia.yml       # Kernel modules and drivers
 ├── files/                   # Root filesystem overlays

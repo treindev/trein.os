@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  - type: dnf
+    repos:
+      copr:
+        - avengemedia/dms
+    install:
+      packages:
+        - dms-greeter
+
+  - type: systemd
+    system:
+      enabled:
+        - greetd.service

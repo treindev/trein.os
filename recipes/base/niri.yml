@@ -15,19 +15,16 @@ modules:
       packages:
         - niri
         - dms
-        - dms-greeter
       exclude:
         - waybar
         - alacritty
-
-  # Service Integration & Symlinks
-  - type: systemd
-    system:
-      enabled:
-        - greetd.service
 
   - type: script
     snippets:
       - mkdir -p /etc/systemd/user/niri.service.wants
       - ln -s /usr/lib/systemd/user/dms.service /etc/systemd/user/niri.service.wants/dms.service
       - ln -s /usr/lib/systemd/user/iio-niri.service /etc/systemd/user/niri.service.wants/iio-niri.service
+      - |
+        if [ -f /etc/xdg/autostart/org.kde.xwaylandvideobridge.desktop ]; then
+          echo "NotShowIn=niri;" >> /etc/xdg/autostart/org.kde.xwaylandvideobridge.desktop
+        fi
