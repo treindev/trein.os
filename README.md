@@ -6,7 +6,7 @@ An opinionated, immutable Fedora Atomic workstation built with [BlueBuild](https
 
 ## System Overview
 
-- **Host Image**: Fedora Atomic 44 ([Universal Blue `base-main`](https://github.com/ublue-os/base-main) & [`kinoite-main`](https://github.com/ublue-os/main))
+- **Host Image**: Fedora Atomic 45 ([Universal Blue `base-main`](https://github.com/ublue-os/base-main) & [`kinoite-main`](https://github.com/ublue-os/main))
 - **Compositor**: [Niri](https://github.com/YaLTeR/niri) (infinite scrollable-tiling Wayland compositor) and KDE Plasma (`gaming-nvidia` dual-session flavor)
 - **Desktop Shell & Greeter**: Dank Material Shell (`dms`) with `dms-greeter` on `greetd` (`niri` flavors) or SDDM (`gaming-nvidia` flavor)
 - **Shell & Terminal**: Fish shell and [Ghostty](https://ghostty.org/)
