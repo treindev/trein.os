@@ -45,6 +45,17 @@ class TestRecipes(unittest.TestCase):
         content = self.readme_path.read_text()
         self.assertIn("Fedora Atomic 45", content)
 
+    def test_build_workflow_matrix_includes_all_flavors(self):
+        workflow_path = REPO_ROOT / ".github" / "workflows" / "build.yml"
+        self.assertTrue(workflow_path.is_file(), f"Missing {workflow_path}")
+        data = yaml.safe_load(workflow_path.read_text())
+        recipes = data.get("jobs", {}).get("bluebuild", {}).get("strategy", {}).get("matrix", {}).get("recipe", [])
+        self.assertEqual(
+            recipes,
+            ["niri-nvidia.yml", "niri.yml", "gaming-nvidia.yml"],
+            "build.yml matrix must build all three flavor recipes",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
