@@ -1,9 +1,9 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: trein.os
-description: Fedora 44 Kinoite with KDE Plasma, Niri, Dank Material Shell and NVIDIA drivers
+description: Fedora 45 Kinoite with KDE Plasma, Niri, Dank Material Shell and NVIDIA drivers
 base-image: ghcr.io/ublue-os/kinoite-main
-image-version: 44
+image-version: 45
 alt-tags:
   - gaming-nvidia
 platforms:
