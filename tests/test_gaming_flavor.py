@@ -107,7 +107,7 @@ class TestGamingFlavor(unittest.TestCase):
 
         self.assertEqual(recipe.get("name"), "trein.os")
         self.assertEqual(recipe.get("base-image"), "ghcr.io/ublue-os/kinoite-main")
-        self.assertEqual(recipe.get("image-version"), 44)
+        self.assertEqual(recipe.get("image-version"), 45)
         self.assertEqual(recipe.get("alt-tags"), ["gaming-nvidia"])
         self.assertEqual(recipe.get("platforms"), ["linux/amd64"])
 

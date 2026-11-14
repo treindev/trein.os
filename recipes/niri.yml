@@ -1,9 +1,9 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: trein.os
-description: Fedora 44 with Niri and Dank Material Shell
+description: Fedora 45 with Niri and Dank Material Shell
 base-image: ghcr.io/ublue-os/base-main
-image-version: 44
+image-version: 45
 alt-tags:
   - niri
 platforms:

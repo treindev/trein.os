@@ -1,9 +1,9 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: trein.os
-description: Fedora 44 with Niri, Dank Material Shell and NVIDIA drivers
+description: Fedora 45 with Niri, Dank Material Shell and NVIDIA drivers
 base-image: ghcr.io/ublue-os/base-main
-image-version: 44
+image-version: 45
 alt-tags:
   - niri-nvidia
 platforms:
