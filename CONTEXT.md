@@ -1,11 +1,11 @@
 # trein.os
 
-A custom immutable Fedora Atomic workstation system built with BlueBuild, designed for personal laptops and desktops with scrollable-tiling Wayland compositing and containerized development.
+A custom immutable Fedora Atomic workstation system built with BlueBuild, based on Universal Blue Kinoite (KDE Plasma) with NVIDIA drivers, host-layered gaming tooling, and containerized development.
 
 ## Language
 
 **Host Image**:
-The immutable, ostree-based system layer built from BlueBuild recipes that manages the hardware drivers, desktop compositor, and core system services.
+The immutable, ostree-based system layer built from BlueBuild recipes that manages the hardware drivers, desktop environment, and core system services.
 _Avoid_: Base OS, rootfs, host system
 
 **Devbox**:
@@ -13,12 +13,8 @@ The primary mutable Distrobox container used to isolate GUI code editors, develo
 _Avoid_: Toolbox, dev container, subshell, VM
 
 **Recipe**:
-A top-level declarative BlueBuild YAML document defining the base container image, image version, and module pipeline for a specific hardware or environment flavor.
+The top-level declarative BlueBuild YAML document (`recipes/recipe.yml`) defining the base container image, image version, and module pipeline for the host image.
 _Avoid_: Manifest, build script, Containerfile
-
-**Flavor**:
-A distinct build configuration of the host image targeting specific hardware capabilities (such as `niri-nvidia`, `niri`, or `gaming-nvidia`) published as a dedicated container tag under the unified image repository.
-_Avoid_: Variant, edition, release, distro
 
 **Base Module**:
 A modular BlueBuild configuration snippet residing in `recipes/base/` that defines a reusable layer of system packages, files, or services.

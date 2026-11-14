@@ -1,15 +1,14 @@
 # trein.os &nbsp; [![bluebuild build badge](https://github.com/treindev/trein.os/actions/workflows/build.yml/badge.svg)](https://github.com/treindev/trein.os/actions/workflows/build.yml)
 
-An opinionated, immutable Fedora Atomic workstation built with [BlueBuild](https://blue-build.org/), featuring the [Niri](https://github.com/YaLTeR/niri) scrollable-tiling Wayland compositor, [Dank Material Shell (DMS)](https://github.com/avengemedia/dms), and containerized development via [Distrobox](https://github.com/89luca89/distrobox).
+An opinionated, immutable Fedora Atomic workstation built with [BlueBuild](https://blue-build.org/), based on Universal Blue's Fedora Kinoite (KDE Plasma) with NVIDIA drivers, host-layered Steam gaming tooling, and containerized development via [Distrobox](https://github.com/89luca89/distrobox).
 
 ---
 
 ## System Overview
 
-- **Host Image**: Fedora Atomic 45 ([Universal Blue `base-main`](https://github.com/ublue-os/base-main) & [`kinoite-main`](https://github.com/ublue-os/main))
-- **Compositor**: [Niri](https://github.com/YaLTeR/niri) (infinite scrollable-tiling Wayland compositor) and KDE Plasma (`gaming-nvidia` dual-session flavor)
-- **Desktop Shell & Greeter**: Dank Material Shell (`dms`) with `dms-greeter` on `greetd` (`niri` flavors) or SDDM (`gaming-nvidia` flavor)
-- **Shell & Terminal**: Fish shell and [Ghostty](https://ghostty.org/)
+- **Host Image**: Fedora Atomic 45 ([Universal Blue `kinoite-main`](https://github.com/ublue-os/main))
+- **Desktop Environment & Greeter**: KDE Plasma with SDDM
+- **Shell**: Fish shell
 - **Graphics / Drivers**: NVIDIA proprietary drivers built via `akmods`
 - **Gaming**: Host-layered RPM Steam (`steam`, `gamemode`, `gamescope`, `steam-devices`) and SteamOS sysctl tuning (`vm.max_map_count = 2147483642`)
 - **Development**: Isolated Distrobox (`devbox`) with exported IDEs (VS Code, Zed, Antigravity)
@@ -18,25 +17,15 @@ An opinionated, immutable Fedora Atomic workstation built with [BlueBuild](https
 
 ---
 
-## Flavors & Installation
+## Installation
 
-Images are signed with [Sigstore](https://www.sigstore.dev/)'s [cosign](https://github.com/sigstore/cosign) and published to the GitHub Container Registry under `ghcr.io/treindev/trein.os`.
-
-Per [ADR-0002](docs/adr/0002-flavor-tagged-container-images.md), builds are organized into flavor tags:
-
-| Flavor | Tag | Target Hardware |
-| :--- | :--- | :--- |
-| **Niri + NVIDIA** (Default) | `niri-nvidia` | Personal laptop with dedicated NVIDIA GPU |
-| **Niri Generic** | `niri` | Desktop / work laptop with AMD or Intel graphics |
-| **Gaming + NVIDIA (Kinoite)** | `gaming-nvidia` | Multi-monitor gaming & dev setup with KDE Plasma (SDDM), Niri + DMS, and NVIDIA GPU |
+Images are signed with [Sigstore](https://www.sigstore.dev/)'s [cosign](https://github.com/sigstore/cosign) and published to the GitHub Container Registry under `ghcr.io/treindev/trein.os:latest` (and `:45`).
 
 ### Rebasing an Existing Atomic Fedora System
 
-Replace `<flavor>` with your target flavor (e.g. `niri-nvidia`, `niri`, or `gaming-nvidia`):
-
 1. **Rebase to the unsigned image** to import container signing keys and policies:
    ```bash
-   rpm-ostree rebase ostree-unverified-registry:ghcr.io/treindev/trein.os:<flavor>
+   rpm-ostree rebase ostree-unverified-registry:ghcr.io/treindev/trein.os:latest
    ```
 2. **Reboot** to boot into the new image:
    ```bash
@@ -44,7 +33,7 @@ Replace `<flavor>` with your target flavor (e.g. `niri-nvidia`, `niri`, or `gami
    ```
 3. **Rebase to the signed image**:
    ```bash
-   rpm-ostree rebase ostree-image-signed:docker://ghcr.io/treindev/trein.os:<flavor>
+   rpm-ostree rebase ostree-image-signed:docker://ghcr.io/treindev/trein.os:latest
    ```
 4. **Reboot** to complete verification:
    ```bash
@@ -56,7 +45,7 @@ Replace `<flavor>` with your target flavor (e.g. `niri-nvidia`, `niri`, or `gami
 Verify image signatures manually using `cosign.pub` from this repository:
 
 ```bash
-cosign verify --key cosign.pub ghcr.io/treindev/trein.os:<flavor>
+cosign verify --key cosign.pub ghcr.io/treindev/trein.os:latest
 ```
 
 ---
@@ -76,11 +65,7 @@ Per [ADR-0001](docs/adr/0001-distrobox-first-development-environment.md), the ho
 
 ## Dotfiles & Machine Customization
 
-Per [ADR-0003](docs/adr/0003-chezmoi-for-user-dotfiles.md), machine-specific configurations (such as multi-monitor layouts) and user dotfiles are decoupled from the host image:
-
-- `/etc/skel/` provides fallback compositor and shell defaults for unconfigured user accounts.
-- Active dotfiles, per-machine monitor geometries, and keybinding overrides are managed via **Chezmoi**.
-- **Planned Migration ([#5](https://github.com/treindev/trein.os/issues/5))**: Moving personal Niri configs and templated display profiles to an external dotfiles repository via BlueBuild's official `chezmoi` module.
+Per [ADR-0003](docs/adr/0003-chezmoi-for-user-dotfiles.md), machine-specific configurations (such as multi-monitor layouts) and user dotfiles are decoupled from the host image via **Chezmoi**.
 
 ---
 
@@ -91,22 +76,17 @@ trein.os/
 ├── CONTEXT.md               # Domain vocabulary and ubiquitous terms
 ├── AGENTS.md                # Agent workflow rules and guidelines
 ├── recipes/                 # BlueBuild image definitions
-│   ├── niri-nvidia.yml      # Niri + NVIDIA flavor
-│   ├── niri.yml             # Niri generic (non-Nvidia) flavor
-│   ├── gaming-nvidia.yml    # Kinoite gaming flavor (Plasma + Niri + NVIDIA)
+│   ├── recipe.yml           # Main Kinoite Plasma + NVIDIA + Gaming recipe
 │   └── base/                # Reusable module snippets
 │       ├── common.yml       # Base packages, fonts, flatpaks, user services
 │       ├── gaming.yml       # Host RPM Steam, GameMode, Gamescope, udev rules
-│       ├── greetd.yml       # Greetd login manager and dms-greeter
-│       ├── niri.yml         # Niri compositor and DMS shell
 │       └── nvidia.yml       # Kernel modules and drivers
 ├── files/                   # Root filesystem overlays
-│   ├── base/                # Systemd units and core system files
-│   └── niri/                # Greetd configs and skeleton defaults
+│   └── base/                # Systemd units, sysctl, udev rules, and core scripts
 ├── docs/
 │   ├── adr/                 # Architecture Decision Records
 │   │   ├── 0001-distrobox-first-development-environment.md
-│   │   ├── 0002-flavor-tagged-container-images.md
+│   │   ├── 0002-flavor-tagged-container-images.md  # Superseded
 │   │   └── 0003-chezmoi-for-user-dotfiles.md
 │   └── agents/              # Agent skills and tracker documentation
 └── cosign.pub               # Public key for container verification
