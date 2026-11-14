@@ -25,7 +25,7 @@ jobs:
         uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           package: trein.os
-          exclude-tags: latest,45,gaming-nvidia
+          exclude-tags: latest,45
           keep-n-tagged: 5
           older-than: 7 days
           delete-untagged: true
