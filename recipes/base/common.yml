@@ -27,12 +27,12 @@ modules:
     install:
       packages:
         - distrobox
+        - podman-compose
+        - podman-docker
         - btop
         - fish
         - ddcutil
-        - xdg-desktop-portal-gnome
         - gnome-keyring
-        - nautilus
         - iio-sensor-proxy
         - libvirt-daemon-config-network
         - libvirt-daemon-kvm
@@ -43,24 +43,12 @@ modules:
         - bolt
         - playerctl
         - brightnessctl
-        - grim
-        - slurp
-        - swappy
-        - adw-gtk3-theme
         - cups-pk-helper
+        - restic
     remove:
       packages:
         - firefox
       auto-remove: true
-
-  # Fast-Moving / COPR Packages (Frequent updates)
-  - type: dnf
-    repos:
-      copr:
-        - scottames/ghostty
-    install:
-      packages:
-        - ghostty
 
   # Service Integration & Symlinks
   - type: systemd
@@ -76,6 +64,7 @@ modules:
       enabled:
         - init-devbox.service
         - devbox-update.timer
+        - podman.socket
 
   # Flatpaks
   - type: default-flatpaks

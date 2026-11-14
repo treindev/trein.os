@@ -1,0 +1,34 @@
+name: cleanup-ghcr
+on:
+  schedule:
+    - cron: "30 06 * * *" # daily after the 06:00 UTC build
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Preview deletions without modifying GHCR"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    name: Clean Up GHCR Versions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Clean up old and untagged GHCR images
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          package: trein.os
+          exclude-tags: latest,45
+          keep-n-tagged: 5
+          older-than: 7 days
+          delete-untagged: true
+          delete-orphaned-images: true
+          validate: true
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}

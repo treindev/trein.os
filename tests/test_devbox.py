@@ -74,6 +74,11 @@ class TestDevboxManifest(unittest.TestCase):
         init_hooks = devbox.get("init_hooks")
         expected_hook_tokens = [
             ("xdg-open", "xdg-open host delegation hook missing in init_hooks"),
+            ("/usr/local/bin/podman", "podman host delegation hook missing in init_hooks"),
+            ("/usr/local/bin/podman-compose", "podman-compose host delegation hook missing in init_hooks"),
+            ("/usr/local/bin/docker", "docker host delegation hook missing in init_hooks"),
+            ("podman-socket.sh", "POSIX podman socket env hook missing in init_hooks"),
+            ("podman-socket.fish", "Fish podman socket env hook missing in init_hooks"),
             ("distrobox-host-exec", "distrobox-host-exec missing in xdg-open hook"),
             ("zed.dev/install.sh", "Zed installation hook missing in init_hooks"),
             ("antigravity.google/cli/install.sh", "Antigravity CLI hook missing in init_hooks"),

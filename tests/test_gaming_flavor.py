@@ -11,12 +11,8 @@ class TestGamingFlavor(unittest.TestCase):
         self.sysctl_gaming_path = (
             REPO_ROOT / "files" / "base" / "usr" / "lib" / "sysctl.d" / "80-gaming.conf"
         )
-        self.greetd_module_path = REPO_ROOT / "recipes" / "base" / "greetd.yml"
-        self.niri_module_path = REPO_ROOT / "recipes" / "base" / "niri.yml"
         self.common_module_path = REPO_ROOT / "recipes" / "base" / "common.yml"
-        self.gaming_recipe_path = REPO_ROOT / "recipes" / "gaming-nvidia.yml"
-        self.niri_nvidia_recipe_path = REPO_ROOT / "recipes" / "niri-nvidia.yml"
-        self.niri_recipe_path = REPO_ROOT / "recipes" / "niri.yml"
+        self.recipe_path = REPO_ROOT / "recipes" / "recipe.yml"
         self.build_workflow_path = REPO_ROOT / ".github" / "workflows" / "build.yml"
 
     def _get_from_files(self, recipe_path: Path) -> list[str]:
@@ -62,28 +58,13 @@ class TestGamingFlavor(unittest.TestCase):
         self.assertIn("fs.inotify.max_user_watches = 524288", content)
         self.assertIn("fs.inotify.max_user_instances = 8192", content)
 
-    def test_greetd_module_decoupled_from_niri(self):
-        self.assertTrue(self.greetd_module_path.is_file(), f"Missing {self.greetd_module_path}")
-        greetd_packages = self._get_dnf_packages(self.greetd_module_path)
-        self.assertIn("dms-greeter", greetd_packages, "dms-greeter must be installed in base/greetd.yml")
-
-        enabled_system = self._get_enabled_services(self.greetd_module_path, scope="system")
-        self.assertIn("greetd.service", enabled_system)
-
-        self.assertTrue(self.niri_module_path.is_file(), f"Missing {self.niri_module_path}")
-        niri_packages = self._get_dnf_packages(self.niri_module_path)
-        self.assertNotIn("dms-greeter", niri_packages, "dms-greeter must be decoupled from base/niri.yml")
-
-        niri_enabled_system = self._get_enabled_services(self.niri_module_path, scope="system")
-        self.assertNotIn("greetd.service", niri_enabled_system, "greetd.service must not be enabled in base/niri.yml")
-
-        niri_nvidia_files = self._get_from_files(self.niri_nvidia_recipe_path)
-        self.assertIn("base/gaming.yml", niri_nvidia_files)
-        self.assertIn("base/greetd.yml", niri_nvidia_files)
-
-        niri_files = self._get_from_files(self.niri_recipe_path)
-        self.assertIn("base/gaming.yml", niri_files)
-        self.assertIn("base/greetd.yml", niri_files)
+    def test_niri_and_greetd_removed(self):
+        self.assertFalse((REPO_ROOT / "recipes" / "base" / "niri.yml").exists())
+        self.assertFalse((REPO_ROOT / "recipes" / "base" / "greetd.yml").exists())
+        self.assertFalse((REPO_ROOT / "recipes" / "niri.yml").exists())
+        self.assertFalse((REPO_ROOT / "recipes" / "niri-nvidia.yml").exists())
+        self.assertFalse((REPO_ROOT / "recipes" / "gaming-nvidia.yml").exists())
+        self.assertFalse((REPO_ROOT / "files" / "niri").exists())
 
     def test_common_retains_hardware_control_and_flatpaks(self):
         common_packages = self._get_dnf_packages(self.common_module_path)
@@ -101,50 +82,35 @@ class TestGamingFlavor(unittest.TestCase):
         self.assertFalse((REPO_ROOT / "recipes" / "base" / "flatpaks.yml").exists())
         self.assertFalse((REPO_ROOT / "recipes" / "base" / "flatpaks-steam.yml").exists())
 
-    def test_gaming_nvidia_recipe_structure_and_ci(self):
-        self.assertTrue(self.gaming_recipe_path.is_file(), f"Missing {self.gaming_recipe_path}")
-        recipe = yaml.safe_load(self.gaming_recipe_path.read_text())
+    def test_recipe_structure_and_ci(self):
+        self.assertTrue(self.recipe_path.is_file(), f"Missing {self.recipe_path}")
+        recipe = yaml.safe_load(self.recipe_path.read_text())
 
         self.assertEqual(recipe.get("name"), "trein.os")
         self.assertEqual(recipe.get("base-image"), "ghcr.io/ublue-os/kinoite-main")
-        self.assertEqual(recipe.get("image-version"), 44)
-        self.assertEqual(recipe.get("alt-tags"), ["gaming-nvidia"])
+        self.assertEqual(recipe.get("image-version"), 45)
+        self.assertNotIn("alt-tags", recipe)
         self.assertEqual(recipe.get("platforms"), ["linux/amd64"])
 
-        from_files = self._get_from_files(self.gaming_recipe_path)
+        from_files = self._get_from_files(self.recipe_path)
         self.assertEqual(
             from_files,
             [
                 "base/common.yml",
                 "base/gaming.yml",
-                "base/niri.yml",
                 "base/nvidia.yml",
             ],
         )
-        self.assertNotIn("base/greetd.yml", from_files)
 
         os_release_mods = [
             m for m in recipe.get("modules", []) if m.get("type") == "os-release"
         ]
         self.assertEqual(len(os_release_mods), 1)
-        self.assertEqual(
-            os_release_mods[0].get("properties", {}).get("PRETTY_NAME"),
-            "trein.os for Gaming Nvidia - Plasma & Niri (FROM Universal Blue Kinoite)",
-        )
+        self.assertIn("KDE Plasma", os_release_mods[0].get("properties", {}).get("PRETTY_NAME", ""))
 
         workflow = yaml.safe_load(self.build_workflow_path.read_text())
         matrix_recipes = workflow["jobs"]["bluebuild"]["strategy"]["matrix"]["recipe"]
-        self.assertIn("gaming-nvidia.yml", matrix_recipes)
-
-    def test_niri_suppresses_xwaylandvideobridge_autostart(self):
-        niri_content = yaml.safe_load(self.niri_module_path.read_text())
-        script_mods = [m for m in niri_content.get("modules", []) if m.get("type") == "script"]
-        snippets = []
-        for sm in script_mods:
-            snippets.extend(sm.get("snippets", []))
-        joined = "\n".join(snippets)
-        self.assertIn("/etc/xdg/autostart/org.kde.xwaylandvideobridge.desktop", joined)
-        self.assertIn("NotShowIn=niri;", joined)
+        self.assertEqual(matrix_recipes, ["recipe.yml"])
 
 
 if __name__ == "__main__":
