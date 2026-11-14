@@ -67,51 +67,6 @@ class TestHardwareEnablement(unittest.TestCase):
             "python-validity must not be installed (unsupported Validity 138a:00ab)",
         )
 
-    def test_iio_niri_executable_and_mapping(self):
-        """Verify iio-niri daemon script exists, is executable, and contains valid orientation transforms."""
-        script_path = REPO_ROOT / "files" / "niri" / "usr" / "bin" / "iio-niri"
-        self.assertTrue(script_path.is_file(), f"Missing {script_path}")
-        mode = script_path.stat().st_mode
-        self.assertTrue(bool(mode & stat.S_IXUSR), "iio-niri must have executable permissions")
-
-        content = script_path.read_text()
-        self.assertIn("monitor-sensor", content)
-        self.assertIn("niri", content)
-
-        namespace = {}
-        exec(content, namespace)
-        orientation_map = namespace["ORIENTATION_MAP"]
-        self.assertEqual(orientation_map.get("normal"), "normal")
-        self.assertEqual(orientation_map.get("bottom-up"), "180")
-        self.assertEqual(orientation_map.get("left-up"), "90")
-        self.assertEqual(orientation_map.get("right-up"), "270")
-
-    def test_iio_niri_user_service(self):
-        """Verify iio-niri systemd user unit exists and targets eDP-1."""
-        service_path = (
-            REPO_ROOT / "files" / "niri" / "usr" / "lib" / "systemd" / "user" / "iio-niri.service"
-        )
-        self.assertTrue(service_path.is_file(), f"Missing {service_path}")
-        content = service_path.read_text()
-        self.assertIn("ExecStart=/usr/bin/iio-niri listen --target eDP-1", content)
-        self.assertIn("WantedBy=graphical-session.target", content)
-
-    def test_niri_recipe_iio_niri_symlink(self):
-        """Verify niri recipe creates niri.service.wants symlink for iio-niri.service."""
-        niri_path = REPO_ROOT / "recipes" / "base" / "niri.yml"
-        self.assertTrue(niri_path.is_file(), f"Missing {niri_path}")
-        niri_content = yaml.safe_load(niri_path.read_text())
-        script_modules = [m for m in niri_content.get("modules", []) if m.get("type") == "script"]
-        snippets = []
-        for sm in script_modules:
-            snippets.extend(sm.get("snippets", []))
-
-        symlink_cmd = (
-            "ln -s /usr/lib/systemd/user/iio-niri.service "
-            "/etc/systemd/user/niri.service.wants/iio-niri.service"
-        )
-        self.assertIn(symlink_cmd, snippets)
-
     def test_input_inhibit_udev_rules(self):
         """Verify udev rules grant input group access to keyboard and touchpad sysfs inhibition."""
         udev_path = (
@@ -122,24 +77,6 @@ class TestHardwareEnablement(unittest.TestCase):
         self.assertIn('ATTR{name}=="AT Translated Set 2 keyboard"', content)
         self.assertIn('ATTR{name}=="SYNA307B:00 06CB:CD46 Touchpad"', content)
         self.assertIn('GROUP="input"', content)
-
-    def test_niri_input_kdl_touch_tablet_mapping(self):
-        """Verify input.kdl maps touch and tablet digitizers to eDP-1."""
-        input_path = REPO_ROOT / "files" / "niri" / "etc" / "skel" / ".config" / "niri" / "input.kdl"
-        self.assertTrue(input_path.is_file(), f"Missing {input_path}")
-        content = input_path.read_text()
-        self.assertIn("touch", content)
-        self.assertIn("tablet", content)
-        self.assertIn('map-to-output "eDP-1"', content)
-
-    def test_niri_config_switch_events(self):
-        """Verify config.kdl specifies switch-events for tablet mode transitions."""
-        config_path = REPO_ROOT / "files" / "niri" / "etc" / "skel" / ".config" / "niri" / "config.kdl"
-        self.assertTrue(config_path.is_file(), f"Missing {config_path}")
-        content = config_path.read_text()
-        self.assertIn("switch-events", content)
-        self.assertIn("tablet-mode-on", content)
-        self.assertIn("tablet-mode-off", content)
 
 
 if __name__ == "__main__":

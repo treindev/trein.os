@@ -127,37 +127,6 @@ class TestMonctl(unittest.TestCase):
             self.assertTrue(is_bus_available(6))
             self.assertFalse(is_bus_available(4))
 
-    def test_niri_binds_configuration(self):
-        """Verify Niri binds.kdl configures monctl and dms/binds.kdl contains no duplicate brightness keys."""
-        binds_path = REPO_ROOT / "files" / "niri" / "etc" / "skel" / ".config" / "niri" / "binds.kdl"
-        dms_binds_path = (
-            REPO_ROOT / "files" / "niri" / "etc" / "skel" / ".config" / "niri" / "dms" / "binds.kdl"
-        )
-        home_path = (
-            REPO_ROOT / "files" / "niri" / "etc" / "skel" / ".config" / "niri" / "display" / "home.kdl"
-        )
-
-        self.assertTrue(binds_path.is_file(), f"Missing {binds_path}")
-        self.assertTrue(dms_binds_path.is_file(), f"Missing {dms_binds_path}")
-        self.assertTrue(home_path.is_file(), f"Missing {home_path}")
-
-        binds_content = binds_path.read_text()
-        dms_content = dms_binds_path.read_text()
-        home_content = home_path.read_text()
-
-        # Check binds.kdl has monctl brightness and preset toggle
-        self.assertIn('spawn "monctl" "brightness" "+5"', binds_content)
-        self.assertIn('spawn "monctl" "brightness" "-5"', binds_content)
-        self.assertIn('spawn "monctl" "preset" "toggle"', binds_content)
-
-        # Check dms/binds.kdl does NOT duplicate XF86MonBrightness keys
-        self.assertNotIn("XF86MonBrightnessUp", dms_content)
-        self.assertNotIn("XF86MonBrightnessDown", dms_content)
-
-        # Check home.kdl documents the 120Hz vs 4K 60Hz mode trade-off
-        self.assertIn("119.998", home_content)
-        self.assertIn("3840x2160", home_content)
-
 
 if __name__ == "__main__":
     unittest.main()

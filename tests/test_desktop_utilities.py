@@ -19,47 +19,44 @@ class TestDesktopUtilities(unittest.TestCase):
             packages.extend(dm.get("install", {}).get("packages", []))
         return packages
 
-    def test_flameshot_removed(self):
+    def test_niri_and_ghostty_packages_removed(self):
         installed = self._get_installed_packages()
-        self.assertNotIn(
+        for pkg in [
             "flameshot",
-            installed,
-            "flameshot must be removed in favor of modern Wayland screenshot tooling",
-        )
-
-    def test_wayland_screenshot_utilities_installed(self):
-        installed = self._get_installed_packages()
-        for pkg in ["grim", "slurp", "swappy"]:
-            self.assertIn(
+            "grim",
+            "slurp",
+            "swappy",
+            "nautilus",
+            "xdg-desktop-portal-gnome",
+            "adw-gtk3-theme",
+            "ghostty",
+        ]:
+            self.assertNotIn(
                 pkg,
                 installed,
-                f"Modern Wayland screenshot utility '{pkg}' must be in dnf install packages",
+                f"'{pkg}' must be removed from base/common.yml for Plasma-only Kinoite image",
             )
+
+        for dm in self.dnf_modules:
+            coprs = dm.get("repos", {}).get("copr", [])
+            self.assertNotIn("scottames/ghostty", coprs)
 
     def test_desktop_control_utilities_installed(self):
         installed = self._get_installed_packages()
         self.assertIn(
             "playerctl",
             installed,
-            "playerctl must be installed to support MPRIS media keybindings in binds.kdl",
+            "playerctl must be installed to support MPRIS media control",
         )
         self.assertIn(
             "brightnessctl",
             installed,
             "brightnessctl must be installed for scriptable backlight control",
         )
-
-    def test_dms_integration_dependencies_installed(self):
-        installed = self._get_installed_packages()
-        self.assertIn(
-            "adw-gtk3-theme",
-            installed,
-            "adw-gtk3-theme must be installed to satisfy DMS GTK3 theming and doctor checks",
-        )
         self.assertIn(
             "cups-pk-helper",
             installed,
-            "cups-pk-helper must be installed to satisfy DMS doctor checks and printer policy",
+            "cups-pk-helper must be installed for printer policy integration",
         )
 
 
