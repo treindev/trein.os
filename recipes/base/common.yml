@@ -27,6 +27,8 @@ modules:
     install:
       packages:
         - distrobox
+        - podman-compose
+        - podman-docker
         - btop
         - fish
         - ddcutil
@@ -61,6 +63,7 @@ modules:
       enabled:
         - init-devbox.service
         - devbox-update.timer
+        - podman.socket
 
   # Flatpaks
   - type: default-flatpaks
