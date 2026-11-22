@@ -78,6 +78,24 @@ class TestHardwareEnablement(unittest.TestCase):
         self.assertIn('ATTR{name}=="SYNA307B:00 06CB:CD46 Touchpad"', content)
         self.assertIn('GROUP="input"', content)
 
+    def test_android_udev_rules_and_sysusers(self):
+        """Verify Android udev rules and sysusers drop-in are present for non-root ADB USB access."""
+        udev_path = (
+            REPO_ROOT / "files" / "base" / "usr" / "lib" / "udev" / "rules.d" / "51-android.rules"
+        )
+        sysusers_path = (
+            REPO_ROOT / "files" / "base" / "usr" / "lib" / "sysusers.d" / "android-udev.conf"
+        )
+        self.assertTrue(udev_path.is_file(), f"Missing {udev_path}")
+        self.assertTrue(sysusers_path.is_file(), f"Missing {sysusers_path}")
+
+        udev_content = udev_path.read_text()
+        self.assertIn('GROUP="adbusers"', udev_content)
+        self.assertIn('TAG+="uaccess"', udev_content)
+
+        sysusers_content = sysusers_path.read_text()
+        self.assertIn("g adbusers", sysusers_content)
+
 
 if __name__ == "__main__":
     unittest.main()
