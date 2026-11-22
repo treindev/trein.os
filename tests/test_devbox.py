@@ -59,7 +59,7 @@ class TestDevboxManifest(unittest.TestCase):
 
         # Additional packages
         packages = devbox.get("additional_packages", "")
-        for pkg in ["git", "fish", "curl", "code"]:
+        for pkg in ["git", "fish", "curl", "code", "android-tools"]:
             self.assertIn(pkg, packages, f"Package {pkg} missing in additional_packages")
 
         # pre_init_hooks (VS Code repo & GPG key, with idempotency check)
@@ -96,6 +96,7 @@ class TestDevboxManifest(unittest.TestCase):
         bins = devbox.get("exported_bins", "").strip(' "').split()
         self.assertIn("/usr/bin/code", bins)
         self.assertIn("/usr/local/bin/antigravity", bins)
+        self.assertIn("/usr/bin/adb", bins)
 
 
 class TestDevboxAntigravityInit(unittest.TestCase):
