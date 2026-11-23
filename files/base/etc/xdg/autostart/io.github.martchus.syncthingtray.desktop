@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Syncthing Tray
+Comment=Autostart Syncthing Tray Flatpak on login
+Exec=/usr/bin/flatpak run io.github.martchus.syncthingtray --wait
+Terminal=false
+X-GNOME-Autostart-enabled=true

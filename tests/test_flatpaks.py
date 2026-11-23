@@ -36,6 +36,7 @@ class TestDeclarativeFlatpaks(unittest.TestCase):
             "com.protonvpn.www",
             "org.jellyfin.JellyfinDesktop",
             "org.qbittorrent.qBittorrent",
+            "io.github.martchus.syncthingtray",
         ]
         for app in curated_apps:
             self.assertIn(
@@ -85,6 +86,18 @@ class TestDeclarativeFlatpaks(unittest.TestCase):
                 installed,
                 f"Developer IDE '{ide}' must not be declared as host Flatpak; must be in Devbox per ADR-0001",
             )
+
+    def test_autostart_desktop_entries_present(self):
+        autostart_dir = REPO_ROOT / "files" / "base" / "etc" / "xdg" / "autostart"
+        expected_entries = {
+            "com.protonvpn.www.desktop": "Exec=/usr/bin/flatpak run com.protonvpn.www",
+            "io.github.martchus.syncthingtray.desktop": "Exec=/usr/bin/flatpak run io.github.martchus.syncthingtray --wait",
+        }
+        for filename, expected_exec in expected_entries.items():
+            entry_path = autostart_dir / filename
+            self.assertTrue(entry_path.is_file(), f"Missing autostart desktop entry {entry_path}")
+            content = entry_path.read_text()
+            self.assertIn(expected_exec, content, f"{entry_path} must contain '{expected_exec}'")
 
 
 if __name__ == "__main__":
